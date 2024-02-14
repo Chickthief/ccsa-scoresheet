@@ -1,0 +1,44 @@
+.scoresheet-default {
+  width: 375px; /* iPhone 12 width */
+  height: 812px; /* iPhone 12 height */
+  background-color: rgb(255, 255, 255);
+  border-radius: 25px; /* Rounded corners */
+  position: relative;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Simple shadow for 3D effect */
+  overflow: hidden; /* Ensures nothing spills out of the rounded corners */
+  font-family: Lato, sans-serif;
+  text-align: center;
+}
+
+.navbar-padding {
+  padding-left: 0%;
+  padding-right: 5%;
+  padding-top: 5%;
+  padding-bottom: 5%;
+}
+
+.navbar-elements {
+  width: 75%;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.navbar-brand-width {
+  width: 20%;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.button-ccsa {
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 16px;
+  text-align: center;
+  text-decoration: none;
+  color: #000; /* Black text color */
+  background-color: #fff; /* White background */
+  border: 1px solid #000; /* Black border */
+  border-radius: 4px; /* Slight rounded corners */
+  cursor: pointer; /* Hand cursor when hovered */
+  transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
