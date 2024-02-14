@@ -29,9 +29,10 @@ function AccessCode() {
         id="name"
         value={name}
         onChange={handleInputChange}
-        placeholder="Enter your name"
+        placeholder="Code"
       />
-      <button type="submit">Submit</button>
+      <br />
+      <button className='button-ccsa' type="submit">Submit</button>
     </form>
   );
 }
