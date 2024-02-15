@@ -26,8 +26,8 @@ export default function Info() {
           <h2>{gameDetails.time}</h2>
           <h2>{gameDetails.location}</h2>
           <br />
-          <p>{team1.name}: {team1.players} players</p>
-          <p>{team2.name}: {team2.players} players</p>
+          <p>{team1.name}: {team1.players.length} players</p>
+          <p>{team2.name}: {team2.players.length} players</p>
           <StartButton />
       </div>
     );

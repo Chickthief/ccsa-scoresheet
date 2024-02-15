@@ -1,14 +1,22 @@
-export const team1 = {
+export let team1 = {
   name: "Unchained",
   players: [
     {
       name: "Marcus Chan",
       number: 42
+    },
+    {
+      name: "Grace Hung",
+      number: 2
+    },
+    { 
+      name: "Simeon Wong",
+      number: 4
     }
   ]
 };
   
-export const team2 = {
+export let team2 = {
   name: "Sack of Rice",
   players: [
     {
