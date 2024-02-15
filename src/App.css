@@ -43,12 +43,11 @@
   transition: background-color 0.3s; /* Smooth transition for hover effect */
 }
 
-.lineup-box {
-  border: 2px solid black; /* Creates the border around the element */
-  width: 100px; /* Sets the width of the square */
-  height: 100px; /* Sets the height of the square */
-  display: flex; /* Enables flexbox layout */
-  justify-content: center; /* Centers content horizontally */
-  align-items: center; /* Centers content vertically */
-  margin: 20px; /* Adds some space around the square */
+.default-margins {
+  margin: 0% 5% 0% 5%;
+}
+
+.lineup-border {
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
 }

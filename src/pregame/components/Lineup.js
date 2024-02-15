@@ -17,11 +17,12 @@ export default function Lineup({team}) {
     return (
         <>
             {players.map((player, index) => (
-                <div className="d-flex align-items-center mb-2" key={index}> 
-                    <FontAwesomeIcon className="lineup-box small" icon={faSort} aria-hidden="true" />
-                    <p className="lineup-box me-2 mb-0"> {player.number} </p> 
-                    <p className="lineup-box me-3 mb-0"> {player.name} </p> 
-                    <button className="button-ccsa btn btn-primary" onClick={() => handleClick(index)}>-</button> 
+                <div className="default-margins d-flex align-items-center mb-2"> 
+                    <FontAwesomeIcon className="flex-shrink-1" icon={faSort} aria-hidden="true" />
+                    <div className="flex-grow-1 ms-2"> {player.number} </div> 
+                    <div className="flex-grow-1 ms-3"> {player.name} </div> 
+                    <button className="btn btn-secondary ms-auto" onClick={() => handleClick(index)}>-</button> 
+                    <div className="lineup-border" />
                 </div>
             ))}
         </>
