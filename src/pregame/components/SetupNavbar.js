@@ -8,7 +8,7 @@ export default function Navbar() {
                 <div className="d-flex align-items-center justify-content-evenly">
                     <a className="nav-item nav-link mx-2" href="/Login">Info</a>
                     <a className="nav-item nav-link mx-2" href="/team1setup">{team1.name}</a>
-                    <a className="nav-item nav-link mx-2">{team2.name}</a>
+                    <a className="nav-item nav-link mx-2" href="/team2setup">{team2.name}</a>
                 </div>
             </div>
         </nav>

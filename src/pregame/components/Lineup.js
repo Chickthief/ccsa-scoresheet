@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSort } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
+import { PlayerString } from './PlayerString';
 
 export default function Lineup({team}) {
     const [players, setPlayers] = useState([]);
@@ -25,6 +26,7 @@ export default function Lineup({team}) {
                     <div className="lineup-border" />
                 </div>
             ))}
+            <PlayerString />
         </>
     );
 }
