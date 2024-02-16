@@ -1,4 +1,4 @@
-import { team1, team2 } from '../../constants';
+import { away, home } from '../../constants';
 
 export default function Navbar() {
     return (
@@ -7,8 +7,8 @@ export default function Navbar() {
                 <a className="navbar-brand navbar-brand-width">Setup</a>
                 <div className="d-flex align-items-center justify-content-evenly">
                     <a className="nav-item nav-link mx-2" href="/setupinfo">Info</a>
-                    <a className="nav-item nav-link mx-2" href="/team1setup">{team1.name}</a>
-                    <a className="nav-item nav-link mx-2" href="/team2setup">{team2.name}</a>
+                    <a className="nav-item nav-link mx-2" href="/awaysetup">{away.name}</a>
+                    <a className="nav-item nav-link mx-2" href="/homesetup">{home.name}</a>
                 </div>
             </div>
         </nav>

@@ -1,5 +1,8 @@
-export let team1 = {
+export let away = {
   name: "Unchained",
+  turn: 0,
+  score: 0,
+  outs: 0,
   players: [
     {
       name: "Marcus Chan",
@@ -9,15 +12,58 @@ export let team1 = {
       name: "Grace Hung",
       number: 2
     },
-    { 
-      name: "Simeon Wong",
-      number: 4
+    {
+      name: "Lucas Wong",
+      number: 33
+    },
+    {
+      name: "Jeffrey Lou",
+      number: 23
+    },
+    {
+      name: "Winnie Huang",
+      number: 10
+    },
+    {
+      name: "Justin Chiu",
+      number: 77
+    },
+    {
+      name: "Elise Chiu",
+      number: 24
+    },
+    {
+      name: "Ethan Chen",
+      number: 6
+    },
+    {
+      name: "Ryan Lee",
+      number: 15
+    },
+    {
+      name: "Dorcas Ng",
+      number: 19
+    },
+    {
+      name: "Lealan Erin Macabiog",
+      number: 5
+    },
+    {
+      name: "Darren Ko",
+      number: 88
+    },
+    {
+      name: "Janet Leung",
+      number: 13
     }
   ]
 };
   
-export let team2 = {
+export let home = {
   name: "Sack of Rice",
+  turn: 0,
+  score: 0,
+  outs: 0,
   players: [
     {
       name: "Ryan Li",

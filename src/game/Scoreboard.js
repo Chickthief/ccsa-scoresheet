@@ -1,4 +1,4 @@
-import { team1, team2, game, currentInning } from '../constants';
+import { away, home, game, currentInning } from '../constants';
 
 export default function Scoreboard() {
     return (
@@ -16,10 +16,9 @@ export default function Scoreboard() {
                         </div>
                     );
                 })}
-                <p>{team1.name}</p>
-                <p>{team2.name}</p>
+                <p>{away.score} {away.name}</p>
+                <p>{home.score} {home.name}</p>
             </div>
         </nav>
-
     );
 }
