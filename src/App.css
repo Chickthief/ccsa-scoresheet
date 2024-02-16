@@ -11,7 +11,7 @@
 }
 
 .navbar-padding {
-  padding-left: 0%;
+  padding-left: 5%;
   padding-right: 5%;
   padding-top: 5%;
   padding-bottom: 5%;
@@ -50,4 +50,26 @@
 .lineup-border {
   border-top: 1px solid black;
   border-bottom: 1px solid black;
+}
+
+.inning-grid {
+  display: grid;
+  grid-template-columns: repeat(8, auto); /* creates 8 columns */
+  grid-template-rows: repeat(2, auto); /* creates 2 rows */
+  grid-auto-flow: column; /* fills the grid by column instead of row */
+}
+
+.inning-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd; /* example border style */
+  margin: 2px; /* space between boxes */
+  width: 20px; /* example width */
+  height: 20px; /* example height */
+}
+
+.current-inning {
+  background-color: darkgreen;
+  /* style for the current inning */
 }

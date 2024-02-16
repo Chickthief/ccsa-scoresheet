@@ -5,7 +5,7 @@ import Navbar from './components/SetupNavbar';
 function StartButton() {
     let navigate = useNavigate();
     const handleClick = () => {
-      navigate('/setup'); //change dir
+      navigate('/batting'); //change dir
     };
     return (
       <button className='button-ccsa' id='StartButton' onClick={handleClick}>Confirm Lineup and Start Game</button>

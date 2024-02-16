@@ -32,3 +32,14 @@ export const gameDetails = {
   time: "4:00 pm",
   location: "Parkway Forest"
 };
+
+export let currentInning = 0;
+
+export let game = [];
+for (let i = 0; i < 16; i++) {
+  game[i] = {
+    inning: Math.trunc((i/2)+1),
+    type: i % 2 === 0 ? "top" : "bottom",
+    outs: 0
+  }
+}

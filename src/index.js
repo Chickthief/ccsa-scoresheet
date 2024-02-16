@@ -5,6 +5,7 @@ import Login from './pregame/Login';
 import Setup from './pregame/SetupInfo';
 import Team1Setup from './pregame/Team1Setup';
 import Team2Setup from './pregame/Team2Setup';
+import Batting from './game/Batting';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -13,9 +14,10 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path='/login' element={<Login />} />
-        <Route path='/setup' element={<Setup />} />
+        <Route path='/setupinfo' element={<Setup />} />
         <Route path='/team1setup' element={<Team1Setup />} />
         <Route path='/team2setup' element={<Team2Setup />} />
+        <Route path='/batting' element={<Batting />} />
       </Routes>
     </BrowserRouter>
   );
