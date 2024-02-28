@@ -2,7 +2,7 @@ import { away, home, game, currentInning } from '../constants';
 
 export default function Scoreboard() {
     return (
-        <nav className="navbar navbar-expand-lg navbar-light bg-light navbar-padding">
+        <nav className="navbar navbar-expand-lg navbar-light bg-lightg">
             <h3>{game[currentInning].inning} {game[currentInning].type === 'top' ? '↑' : '↓'}</h3>
             <div className="inning-grid">
                 {game.map((inning, index) => {

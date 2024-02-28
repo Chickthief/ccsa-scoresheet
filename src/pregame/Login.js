@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 function LoginButton() {
   let navigate = useNavigate();
   const handleClick = () => {
-    navigate('/setup');
+    navigate('/setupinfo');
   };
   return (
     <button className='button-ccsa' id='LoginButton' onClick={handleClick}>Login With CCSA Dashboard</button>

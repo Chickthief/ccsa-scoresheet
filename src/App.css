@@ -31,8 +31,6 @@
 
 .button-ccsa {
   display: inline-block;
-  padding: 12px 24px;
-  font-size: 16px;
   text-align: center;
   text-decoration: none;
   color: #000; /* Black text color */
@@ -41,6 +39,12 @@
   border-radius: 4px; /* Slight rounded corners */
   cursor: pointer; /* Hand cursor when hovered */
   transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+.btn-action {
+  font-size: 16px;
+  padding: 8px;
+  width: 100%
 }
 
 .default-margins {
@@ -72,4 +76,16 @@
 .current-inning {
   background-color: darkgreen;
   /* style for the current inning */
+}
+
+.svg-container {
+  position: relative;
+}
+
+.overlay-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; /* Make SVG fill the container */
+  height: 100%; /* Make SVG fill the container */
 }

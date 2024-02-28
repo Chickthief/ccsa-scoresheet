@@ -11,7 +11,7 @@ export default function Lineup({team}) {
     }, [team.players]);
 
     const handleClick = (indexToRemove) => {
-        const updatedPlayers = players.filter((_, index) => index !== indexToRemove);
+        const updatedPlayers = players.filter((_, index) => index !== indexToRemove); //Replace with splice
         setPlayers(updatedPlayers);
     }
 
