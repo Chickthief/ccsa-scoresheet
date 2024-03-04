@@ -6,6 +6,7 @@ import Setup from './pregame/SetupInfo';
 import AwaySetup from './pregame/AwaySetup';
 import HomeSetup from './pregame/HomeSetup';
 import Batting from './game/Batting';
+import Running from './game/Running';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -18,6 +19,7 @@ export default function App() {
         <Route path='/awaysetup' element={<AwaySetup />} />
         <Route path='/homesetup' element={<HomeSetup />} />
         <Route path='/batting' element={<Batting />} />
+        <Route path='/running' element={<Running />} />
       </Routes>
     </BrowserRouter>
   );
