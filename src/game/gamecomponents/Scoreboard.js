@@ -1,4 +1,4 @@
-import { away, home, game, currentInning } from '../constants';
+import { away, home, game, currentInning } from '../../constants';
 
 export default function Scoreboard() {
     return (

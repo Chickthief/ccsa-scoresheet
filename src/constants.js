@@ -3,6 +3,7 @@ export let away = {
   turn: 0,
   score: 0,
   outs: 0,
+  base: [],
   players: [
     {
       name: "Marcus Chan",
@@ -35,7 +36,20 @@ export let away = {
     {
       name: "Ethan Chen",
       number: 6
-    },
+    }
+  ]
+};
+  
+export let home = {
+  name: "Sack of Rice",
+  turn: 0,
+  score: 0,
+  outs: 0,
+  players: [
+    {
+      name: "Ryan Li",
+      number: 15
+    }, 
     {
       name: "Ryan Lee",
       number: 15
@@ -59,19 +73,6 @@ export let away = {
   ]
 };
   
-export let home = {
-  name: "Sack of Rice",
-  turn: 0,
-  score: 0,
-  outs: 0,
-  players: [
-    {
-      name: "Ryan Li",
-      number: 15
-    }
-  ]
-};
-  
 export const gameDetails = {
   code: "TB0908",
   date: "July 24, 2022",
@@ -89,3 +90,16 @@ for (let i = 0; i < 16; i++) {
     outs: 0
   }
 }
+
+export const [homeX, homeY] = [236, 401];
+export const [base1X, base1Y] = [343, 294];
+export const [base2X, base2Y] = [128, 294];
+export const [base3X, base3Y] = [236, 186];
+
+let team;
+if (game[currentInning].type === "top") {
+  team = away;
+} else {
+  team = home;
+}
+export {team};

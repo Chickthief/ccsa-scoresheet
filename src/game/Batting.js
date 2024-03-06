@@ -1,19 +1,13 @@
-import { away, home, game, currentInning } from '../constants';
-import Scoreboard from './Scoreboard';
-import Action from './Action';
+import NextPlayers from './gamecomponents/NextPlayers';
+import Scoreboard from './gamecomponents/Scoreboard';
+import Action from './gamecomponents/Action';
 
 export default function Batting() {
     return (
         <div className='scoresheet-default'>
             <Scoreboard />
-            <p>
-                At Bat: {away.players[away.turn].name} <br />
-                Up Next: {away.players[away.turn + 1].name} <br />
-                {away.players[away.turn + 2].name} <br />
-                {away.players[away.turn + 3].name}
-            </p>
+            <NextPlayers />
             <Action />
-            
         </div>
     );
 }

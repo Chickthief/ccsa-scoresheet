@@ -89,3 +89,12 @@
   width: 100%; /* Make SVG fill the container */
   height: 100%; /* Make SVG fill the container */
 }
+
+.player-overlay-home {
+  position: absolute;
+  top: 98%; /* adjust this value as needed to move the name down */
+  left: 55%;
+  width: 100%;
+  text-align: left;
+  transform: translateY(-50%); /* This ensures the text is centered vertically */
+}
