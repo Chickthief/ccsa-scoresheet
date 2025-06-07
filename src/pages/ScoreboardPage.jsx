@@ -38,6 +38,22 @@ function ScoreboardPage({
     console.log("ScoreboardPage: Initialized gameState:", startingState);
     return startingState;
   });
+  
+  // We initialize the history with the starting state of the game.
+  const [gameStateHistory, setGameStateHistory] = useState([gameState]);
+
+  // ADD THIS useEffect HOOK:
+  useEffect(() => {
+    // This effect runs after every gameState change.
+    // We get the most recent state from the history.
+    const lastStateInHistory = gameStateHistory[gameStateHistory.length - 1];
+
+    // To avoid saving duplicates, only add to history if the state has actually changed.
+    if (gameState !== lastStateInHistory) {
+      console.log("Play completed. Saving new state to history.");
+      setGameStateHistory(prevHistory => [...prevHistory, gameState]);
+    }
+  }, [gameState, gameStateHistory]); // This effect depends on gameState
 
   useEffect(() => {
     console.log("ScoreboardPage: gameState.currentPlay CHANGED to:", JSON.stringify(gameState.currentPlay));
@@ -219,6 +235,26 @@ function ScoreboardPage({
       alert("More actions not yet implemented.");
     }
   }, [gameState.currentPlay.type, gameState.currentPlay.stage, setGameState]);
+
+  const handleUndoLastPlay = useCallback(() => {
+    // Ensure there's more than just the initial state to undo
+    if (gameStateHistory.length <= 1) {
+      alert("Cannot undo the first state of the game.");
+      return;
+    }
+
+    console.log("Undoing last play...");
+
+    // Create a new history array with the most recent state removed.
+    const newHistory = gameStateHistory.slice(0, -1);
+
+    // Get the state we are reverting TO (which is now the last one in the new history).
+    const previousState = newHistory[newHistory.length - 1];
+
+    // Update the history and set the current game state back to the previous one.
+    setGameStateHistory(newHistory);
+    setGameState(previousState);
+  }, [gameStateHistory]); // Depends on gameStateHistory
 
   const handleConfirmDirectOut = useCallback(() => {
     const playType = gameState.currentPlay.type; // Read from gameState directly
@@ -456,6 +492,7 @@ function ScoreboardPage({
                 disableOutcomeButtons={isHitPlayAwaitingFieldLocation} // Ensure this is defined
                 currentPlayType={playType}
                 currentPlayStage={playStage}
+                onUndo={handleUndoLastPlay}
               />
               <BaseballDiamond
                 batterName={currentBatter ? currentBatter.name.split(' ')[0] : ''}

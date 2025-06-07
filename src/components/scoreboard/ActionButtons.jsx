@@ -3,6 +3,7 @@ import React from 'react';
 
 function ActionButtons({
   onPlayAction,
+  onUndo,
   disableOutcomeButtons, // New prop
   currentPlayType,
   currentPlayStage
@@ -58,6 +59,16 @@ function ActionButtons({
         >
           More...
         </button>
+      </div>
+      <div className="utility-actions" style={{marginTop: '15px', textAlign: 'center'}}>
+         <button
+            onClick={onUndo}
+            className="button-ccsa secondary-action-button"
+            // Disable if a hit play is in progress
+            disabled={disableOutcomeButtons}
+          >
+            Undo Last Play
+          </button>
       </div>
     </div>
   );
