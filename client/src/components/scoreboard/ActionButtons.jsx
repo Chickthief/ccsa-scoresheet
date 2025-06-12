@@ -7,7 +7,8 @@ function ActionButtons({
   onEndGameClick, // <-- Add this new prop
   disableOutcomeButtons,
   currentPlayType,
-  currentPlayStage
+  currentPlayStage,
+  onSkipBatter
 }) {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const menuRef = useRef(null);

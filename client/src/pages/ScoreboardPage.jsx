@@ -85,6 +85,32 @@ function ScoreboardPage({
     console.log("ScoreboardPage: gameState.currentPlay CHANGED to:", JSON.stringify(gameState.currentPlay));
   }, [gameState.currentPlay]);
 
+  const handleSkipBatter = useCallback(() => {
+    console.log("Skipping batter:", gameState.currentBatter?.name);
+    
+    // 1. Save the current state so this action can be undone
+    setGameStateHistory(prev => [...prev, gameState]);
+    
+    // 2. Update the state: advance the batter index, but do not add an out
+    setGameState(prev => {
+      const newBatterIndexState = { ...prev.currentBatterIndex };
+      const localBatterTeamKey = prev.isTopInning ? 'away' : 'home';
+      const lineupForBatter = prev.isTopInning ? prev.awayTeamLineup : prev.homeTeamLineup;
+
+      if (lineupForBatter && lineupForBatter.length > 0) {
+        newBatterIndexState[localBatterTeamKey] = (prev.currentBatterIndex[localBatterTeamKey] + 1) % lineupForBatter.length;
+      }
+      
+      // Return the new state, advancing the batter and resetting the play/batter stats
+      return {
+        ...prev,
+        currentBatterIndex: newBatterIndexState,
+        currentPlay: { type: null, stage: null, details: {} },
+        currentBatterStats: { balls: 0, strikes: 0 },
+      };
+    });
+  }, [gameState]); // Dependency on gameState to access current state
+
   // Derived values from gameState
   const currentLineup = gameState.isTopInning ? gameState.awayTeamLineup : gameState.homeTeamLineup;
   const currentBatterTeamKey = gameState.isTopInning ? 'away' : 'home';
@@ -520,6 +546,7 @@ function ScoreboardPage({
                 currentPlayStage={playStage}
                 onUndo={handleUndoLastPlay}
                 onEndGameClick={() => setIsEndGameModalOpen(true)}
+                onSkipBatter={handleSkipBatter} 
               />
               <ConfirmEndGameModal
                 isOpen={isEndGameModalOpen}
