@@ -23,6 +23,13 @@ function GameSetupPage({ teams, gameDetails, onGameStart }) {
         ? JSON.parse(JSON.stringify(PREDEFINED_TEAM_LINEUPS[teams.team1Name]))
         : [];
     }
+    fetch('http://localhost:3001/api/teams') // URL of your backend server
+        .then(response => response.json())
+        .then(data => {
+            console.log("Fetched teams from backend:", data);
+            setTeams(data);
+        })
+        .catch(error => console.error("Error fetching teams:", error));
     if (teams && teams.team2Name) {
       initialGameLineups[teams.team2Name] = PREDEFINED_TEAM_LINEUPS[teams.team2Name]
         ? JSON.parse(JSON.stringify(PREDEFINED_TEAM_LINEUPS[teams.team2Name]))

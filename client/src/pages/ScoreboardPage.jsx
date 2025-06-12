@@ -11,6 +11,7 @@ import {
   extractRunners, // For PlayResolutionPage
   getPlayerById   // Used by extractRunners and for runnersDataForDiamond
 } from '../utils/gameLogic.js'; // Ensure this path is correct
+import ConfirmEndGameModal from '../components/scoreboard/ConfirmEndGameModal';
 
 function ScoreboardPage({
   initialHomeTeamLineup,
@@ -41,6 +42,31 @@ function ScoreboardPage({
   
   // We initialize the history with the starting state of the game.
   const [gameStateHistory, setGameStateHistory] = useState([gameState]);
+
+  const [isEndGameModalOpen, setIsEndGameModalOpen] = useState(false);
+  const [userRequestedEndGame, setUserRequestedEndGame] = useState(false);
+
+    useEffect(() => {
+    // End the game if the user has confirmed it OR if the game's internal state says it's over.
+    if (gameState.isGameOver || userRequestedEndGame) {
+      if (onGameOver) {
+        // Ensure the final state passed up has the isGameOver flag set correctly.
+        onGameOver({ ...gameState, isGameOver: true });
+      }
+    }
+  }, [gameState.isGameOver, userRequestedEndGame, onGameOver, gameState]);
+  
+  useEffect(() => {
+    // This existing effect is perfect. It will trigger when the game is truly over.
+    if (gameState.isGameOver && onGameOver) {
+      onGameOver(gameState);
+    }
+  }, [gameState.isGameOver, onGameOver, gameState]);
+
+  const handleEndGameConfirm = () => {
+    setUserRequestedEndGame(true);
+    setIsEndGameModalOpen(false); // Close the modal
+  };
 
   // ADD THIS useEffect HOOK:
   useEffect(() => {
@@ -126,10 +152,10 @@ function ScoreboardPage({
         nextInningNumber = safeCurrentState.currentInning + 1;
       }
 
-      const isEndOfDefinedInnings = nextInningNumber > 8;
+      const isEndOfDefinedInnings = nextInningNumber > 1;
       const isGameFinishingBlowoutOrRegulation = (safeCurrentState.currentInning >= 8 && !wasPreviouslyTopInning);
 
-      if (isEndOfDefinedInnings || isGameFinishingBlowoutOrRegulation) {
+      if (isEndOfDefinedInnings || isGameFinishingBlowoutOrRegulation || userRequestedEndGame) {
         console.log("GAME OVER after inning:", safeCurrentState.currentInning);
         if (onGameOver) {
           onGameOver({
@@ -493,6 +519,12 @@ function ScoreboardPage({
                 currentPlayType={playType}
                 currentPlayStage={playStage}
                 onUndo={handleUndoLastPlay}
+                onEndGameClick={() => setIsEndGameModalOpen(true)}
+              />
+              <ConfirmEndGameModal
+                isOpen={isEndGameModalOpen}
+                onConfirm={handleEndGameConfirm}
+                onCancel={() => setIsEndGameModalOpen(false)}
               />
               <BaseballDiamond
                 batterName={currentBatter ? currentBatter.name.split(' ')[0] : ''}

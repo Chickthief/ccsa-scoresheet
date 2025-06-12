@@ -85,3 +85,4 @@ export const getBattingOrderInfo = (lineup = [], currentIndex = 0) => {
   }
   return { currentBatter, upNext };
 };
+

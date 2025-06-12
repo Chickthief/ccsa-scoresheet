@@ -1170,3 +1170,66 @@ p {
   margin-bottom: 15px;
   text-align: center;
 }
+
+.utility-actions {
+    margin-top: 15px;
+    text-align: center;
+    position: relative; /* This is crucial for positioning the popup */
+    width: 100%;
+}
+
+.secondary-action-button {
+    background-color: #6c757d;
+    color: white;
+    width: 200px;
+}
+
+.secondary-action-button:disabled {
+    background-color: #a9adb1;
+    cursor: not-allowed;
+}
+
+/* The popup menu itself */
+.more-menu-popup {
+    position: absolute;
+    bottom: calc(100% + 10px); /* Position it above the "More" button with 10px spacing */
+    left: 50%;
+    transform: translateX(-50%); /* Center the menu horizontally */
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    width: 200px;
+    z-index: 100;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px; /* Adds space between menu items */
+}
+
+/* Buttons inside the popup menu */
+.more-menu-popup .menu-button {
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #ddd;
+    text-align: center;
+    padding: 12px 15px;
+    width: 100%;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.more-menu-popup .menu-button:hover {
+    background-color: #e2e6ea;
+}
+
+/* Specific styling for the "End Game" button to make it stand out */
+.more-menu-popup .end-game-button {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.more-menu-popup .end-game-button:hover {
+    background-color: #c82333;
+}
