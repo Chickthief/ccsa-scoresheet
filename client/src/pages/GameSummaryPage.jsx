@@ -75,7 +75,10 @@ function GameSummaryPage({ gameData }) {
           Submit score
         </button>
       </div>
+      
     </div>
+    
+    
   );
 }
 

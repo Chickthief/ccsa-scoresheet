@@ -98,7 +98,7 @@ function ActionButtons({
         <button
           onClick={handleMoreClick}
           className="button-ccsa secondary-action-button"
-          disabled={disableOutcomeButtons}
+          disabled={disableOutcomeButtons} 
         >
           More...
         </button>

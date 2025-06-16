@@ -30,80 +30,86 @@ app.get('/', (req, res) => {
   res.json({ message: "Welcome to the CCSA Scoresheet backend API!" });
 });
 
+// Endpoint to serve a list of teams
+app.get('/api/teams', async (req, res) => {
+  try {
+      const [teams] = await pool.query('SELECT id, name FROM teams');
+      res.json(teams);
+  } catch (error) {
+      console.error("Failed to fetch teams:", error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
-// API Endpoint to get details for ONE specific game, including team rosters
+
+// === UPDATED ENDPOINT TO FETCH GAME DATA ===
+// API Endpoint to get details for ONE specific game, including team rosters and park name
 app.get('/api/games/:gameCode', async (req, res) => {
     const { gameCode } = req.params;
-    console.log(`Fetching data for game code: ${gameCode}`);
+    console.log(`Fetching all data for game code: ${gameCode}`);
 
     try {
-        // Step 1: Get the basic game details and the IDs for the registered teams
-        const [gameRows] = await pool.query('SELECT * FROM games WHERE game_code = ?', [gameCode]);
+        // Step 1: Get the game details, including park and team names, using JOINs
+        const gameQuery = `
+            SELECT
+                g.id,
+                g.game_code,
+                g.game_date,
+                g.game_time,
+                p.name AS park_name,
+                g.home_team_id,
+                g.away_team_id,
+                ht.name AS home_team_name,
+                at.name AS away_team_name
+            FROM games g
+            JOIN parks p ON g.park_id = p.id
+            JOIN teams ht ON g.home_team_id = ht.id
+            JOIN teams at ON g.away_team_id = at.id
+            WHERE g.game_code = ?;
+        `;
+        const [gameRows] = await pool.query(gameQuery, [gameCode]);
+
         if (gameRows.length === 0) {
             return res.status(404).json({ error: 'Game not found' });
         }
         const game = gameRows[0];
 
-        // This is a more complex query to get all the data in fewer steps.
-        // It joins multiple tables to build the response.
-        const query = `
+        // Step 2: Get all players and their jersey numbers for this specific game
+        const playersQuery = `
             SELECT
-                r.id as roster_entry_id,
-                r.jersey_number,
-                u.id as user_id,
-                u.full_name as player_name,
-                tsr.team_id
-            FROM roster_entries r
-            JOIN users u ON r.player_user_id = u.id
-            JOIN team_season_registrations tsr ON r.team_season_registration_id = tsr.id
-            WHERE tsr.id IN (?, ?);
+                u.id AS player_id,
+                u.full_name,
+                pgs.team_id,
+                pgs.jersey_number
+            FROM player_game_stats pgs
+            JOIN users u ON pgs.player_user_id = u.id
+            WHERE pgs.game_id = ?;
         `;
-
-        const [players] = await pool.query(query, [game.home_team_registration_id, game.away_team_registration_id]);
-
-        // Step 2: Get the team names
-        const [teams] = await pool.query('SELECT id, name FROM teams WHERE id IN (SELECT team_id FROM team_season_registrations WHERE id IN (?, ?))', [game.home_team_registration_id, game.away_team_registration_id]);
-        
-        const getTeamName = (registrationId) => {
-            const registration = game.home_team_registration_id === registrationId ? 
-                { team_id: game.home_team_id } : { team_id: game.away_team_id };
-            const team = teams.find(t => t.id === registration.team_id);
-            return team ? team.name : "Unknown Team";
-        };
-
-        const homeTeamName = getTeamName(game.home_team_registration_id);
-        const awayTeamName = getTeamName(game.away_team_registration_id);
-
+        const [players] = await pool.query(playersQuery, [game.id]);
 
         // Step 3: Filter players into home and away lineups
         const homePlayers = players
-            .filter(p => {
-                const reg = game.home_team_registration_id === p.team_id ? {team_id: game.home_team_id} : {team_id: game.away_team_id};
-                return reg.team_id === game.home_team_id;
-            })
-            .map(p => ({ id: p.user_id, name: p.player_name, number: p.jersey_number }));
+            .filter(p => p.team_id === game.home_team_id)
+            .map(p => ({ id: p.player_id, name: p.full_name, number: p.jersey_number }));
 
         const awayPlayers = players
-            .filter(p => {
-                 const reg = game.home_team_registration_id === p.team_id ? {team_id: game.home_team_id} : {team_id: game.away_team_id};
-                return reg.team_id === game.away_team_id;
-            })
-            .map(p => ({ id: p.user_id, name: p.player_name, number: p.jersey_number }));
+            .filter(p => p.team_id === game.away_team_id)
+            .map(p => ({ id: p.player_id, name: p.full_name, number: p.jersey_number }));
 
-        
-        // Step 4: Assemble the final response object
+        // Step 4: Assemble the final response object in the format the frontend expects
         const responseData = {
             gameDetails: {
                 gameCode: game.game_code,
-                location: game.location,
-                time: game.game_time,
+                location: game.park_name,
+                date: new Date(game.game_date).toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' }),
+                time: new Date(`1970-01-01T${game.game_time}Z`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC' }),
             },
             homeTeam: {
-                name: homeTeamName,
+                name: game.home_team_name,
                 lineup: homePlayers
             },
             awayTeam: {
-                name: awayTeamName,
+                name: game.away_team_name,
                 lineup: awayPlayers
             }
         };
@@ -117,8 +123,9 @@ app.get('/api/games/:gameCode', async (req, res) => {
 });
 
 
-// TODO: Add a POST endpoint to submit final game scores.
-// app.post('/api/games/:gameId/results', async (req, res) => { ... });
+// TODO: Add POST endpoints for stats and game submissions
+// app.post('/api/games/:gameId/stats', ...);
+// app.post('/api/submissions', ...);
 
 
 // Start the server

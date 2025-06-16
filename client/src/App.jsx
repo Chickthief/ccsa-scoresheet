@@ -1,111 +1,115 @@
 // src/App.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import LoginPage from './pages/LoginPage';
 import GameSetupPage from './pages/GameSetupPage';
 import ScoreboardPage from './pages/ScoreboardPage';
-import GameSummaryPage from './pages/GameSummaryPage'; // <-- NEW: Import GameSummaryPage
-import { DEFAULT_GAME_TEAMS_INFO, DEFAULT_GAME_DETAILS, PREDEFINED_TEAM_LINEUPS } from './utils/constants';
+import GameSummaryPage from './pages/GameSummaryPage';
+import { API_BASE_URL } from './utils/constants';
 
 function App() {
-  const [view, setView] = useState('login'); // 'login', 'setup', 'scoreboard', 'summary'
-  const [teamInfo, setTeamInfo] = useState(null); // { team1Name, team2Name } (Away, Home)
-  const [gameDetails, setGameDetails] = useState(null); // { gameCode, date, time, location }
-  const [finalizedLineups, setFinalizedLineups] = useState(null); // { [teamName]: lineupArray }
-  const [finalGameData, setFinalGameData] = useState(null); // For the summary page
+  const [currentPage, setCurrentPage] = useState('login');
+  // State to hold the data for the loaded game
+  const [gameData, setGameData] = useState(null);
+  // State for loading and error messages
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  // State for lineups confirmed in the setup page
+  const [confirmedLineups, setConfirmedLineups] = useState(null);
 
-  // ... (useEffect for testing direct scoreboard view can be removed or kept) ...
+  const handleGameCodeSubmit = async (gameCode) => {
+    setIsLoading(true);
+    setError(null);
+    console.log(`Attempting to fetch game with code: ${gameCode}`);
 
-  const handleLoginSuccess = () => {
-    const TInfo = DEFAULT_GAME_TEAMS_INFO; // Assuming team1 is Away, team2 is Home
-    const GDetails = DEFAULT_GAME_DETAILS;
-    setTeamInfo(TInfo);
-    setGameDetails(GDetails);
-    // Initialize lineups for setup based on constants, App will own this setup data
-    const initialSetupLineups = {
-        [TInfo.team1Name]: PREDEFINED_TEAM_LINEUPS[TInfo.team1Name] ? JSON.parse(JSON.stringify(PREDEFINED_TEAM_LINEUPS[TInfo.team1Name])) : [],
-        [TInfo.team2Name]: PREDEFINED_TEAM_LINEUPS[TInfo.team2Name] ? JSON.parse(JSON.stringify(PREDEFINED_TEAM_LINEUPS[TInfo.team2Name])) : [],
-    };
-    setFinalizedLineups(initialSetupLineups); // Use this to pass to GameSetupPage for modification
-    setView('setup');
+    try {
+      // Fetch the game data from your local server endpoint
+      const response = await fetch(`${API_BASE_URL}games/${gameCode}`);
+      
+      if (!response.ok) {
+        // If the server returns an error (e.g., 404 Not Found), handle it
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Game not found.');
+      }
+
+      const data = await response.json();
+      console.log("Successfully fetched game data:", data);
+      
+      // Set the fetched data into state and move to the setup page
+      setGameData(data);
+      setCurrentPage('setup');
+
+    } catch (err) {
+      console.error("Failed to fetch game data:", err);
+      setError(err.message); // Set the error message to display on the login page
+      // To display this error, your LoginForm component needs to accept an `error` prop.
+      // For now, it will just log to the console.
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleStartGameFromSetup = (currentLineupsFromSetup) => {
-    setFinalizedLineups(currentLineupsFromSetup); // These are the lineups to start the game with
-    setView('scoreboard');
+  const handleGameStart = (lineups) => {
+    console.log("Starting game with confirmed lineups:", lineups);
+    setConfirmedLineups(lineups);
+    setCurrentPage('scoreboard');
   };
-
-  // NEW: Callback for when the game ends from ScoreboardPage
+  /**
+   * This is the master function that is passed down to the scoreboard.
+   * When the game is over, this function is called. It prepares the
+   * summary data and switches the view to the 'summary' page.
+   */
   const handleGameOver = (endedGameState) => {
-    console.log("App.jsx: Game Over! Final State:", endedGameState);
-    // Construct the data needed for the GameSummaryPage
-    // For "Uniform deduction", "Sportsmanship", "Equipment" - these need a data source or input mechanism
-    // For now, we'll use placeholders.
+    console.log("App.jsx: Game is Over. Received final state:", endedGameState);
     const summaryData = {
       awayTeam: {
         name: endedGameState.awayTeamName,
         finalScore: endedGameState.score.away,
-        uniformDeduction: 0, // Placeholder
-        sportsmanship: 1,    // Placeholder
-        equipment: 0,        // Placeholder
       },
       homeTeam: {
         name: endedGameState.homeTeamName,
         finalScore: endedGameState.score.home,
-        uniformDeduction: 0, // Placeholder
-        sportsmanship: 1,    // Placeholder
-        equipment: 0,        // Placeholder
       },
-      gameCode: endedGameState.gameDetails?.gameCode || gameDetails?.gameCode || "N/A", // Get from endedGameState or initial gameDetails
-      // Umpire details would also need to be sourced, e.g., from a logged-in user or a setup step
-      umpire: {
-        name: "Roland Chan", // Placeholder
-        id: "00039"          // Placeholder
-      }
+      gameCode: endedGameState.gameDetails?.gameCode || "N/A",
+      umpire: { name: "Roland Chan", id: "00039" },
+      gameHistory: endedGameState.gameHistory || [] // Pass the history for the event log
     };
     setFinalGameData(summaryData);
     setView('summary');
   };
 
-
-  let pageContent;
-  if (view === 'login') {
-    pageContent = <LoginPage onLoginSuccess={handleLoginSuccess} />;
-  } else if (view === 'setup') {
-    // GameSetupPage should receive the initial lineups for modification
-    pageContent = <GameSetupPage
-                    teams={teamInfo}
-                    gameDetails={gameDetails}
-                    initialLineupsForSetup={finalizedLineups} // Pass initial lineups for setup
-                    onGameStart={handleStartGameFromSetup}
-                  />;
-  } else if (view === 'scoreboard') {
-    if (!finalizedLineups || !teamInfo || !gameDetails) {
-      pageContent = <div style={{ padding: '20px', color: 'red' }}>Error: Missing data to start scoreboard.</div>;
-    } else {
-      pageContent = (
-        <ScoreboardPage
-          initialHomeTeamLineup={finalizedLineups[teamInfo.team2Name]} // Assuming team2 is Home
-          initialAwayTeamLineup={finalizedLineups[teamInfo.team1Name]} // Assuming team1 is Away
-          initialGameDetails={gameDetails}
-          homeTeamNameFromSetup={teamInfo.team2Name}
-          awayTeamNameFromSetup={teamInfo.team1Name}
-          onGameOver={handleGameOver} // <-- Pass the new callback
-        />
-      );
+  /**
+   * This function determines which page component to render based
+   * on the current `view` state.
+   */
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'login':
+        return <LoginPage onLoginSuccess={handleGameCodeSubmit} />;
+      case 'setup':
+        return (
+          <GameSetupPage
+            teams={{ homeTeam: gameData.homeTeam, awayTeam: gameData.awayTeam }}
+            gameDetails={gameData.gameDetails}
+            onGameStart={handleGameStart}
+          />
+        );
+      case 'scoreboard':
+        return (
+          <ScoreboardPage
+            gameData={gameData}
+            initialLineups={confirmedLineups}
+          />
+        );
+      case 'summary':
+        return <GameSummaryPage gameData={finalGameData} />;
+      default:
+        return <div>Loading...</div>;
     }
-  } else if (view === 'summary') { // <-- NEW: Render GameSummaryPage
-    if (!finalGameData) {
-        pageContent = <div style={{padding: '20px', color: 'red'}}>Error: No summary data available.</div>;
-    } else {
-        pageContent = <GameSummaryPage gameData={finalGameData} />;
-    }
-  } else {
-    pageContent = <div>Loading or unknown view...</div>;
-  }
+  };
 
   return (
     <div className="iphone-container">
-      {pageContent}
+      {renderPage()}
     </div>
   );
 }

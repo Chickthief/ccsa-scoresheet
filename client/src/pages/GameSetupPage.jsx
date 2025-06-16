@@ -1,91 +1,73 @@
 // src/pages/GameSetupPage.jsx
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback just in case, though not strictly needed for this version
+import React, { useState, useEffect, useCallback } from 'react';
 import TeamLineupManager from '../components/gameSetup/TeamLineupManager';
 import GameInfoTab from '../components/gameSetup/GameInfoTab';
-import { PREDEFINED_TEAM_LINEUPS } from '../utils/constants'; // Ensure this path is correct
+// PREDEFINED_TEAM_LINEUPS is no longer needed here.
+import { API_BASE_URL } from '../utils/constants';
 
+// The 'teams' prop should now contain the full lineup data from the API
 function GameSetupPage({ teams, gameDetails, onGameStart }) {
-  const teamNamesFromProps = teams ? [teams.team1Name, teams.team2Name].filter(Boolean) : [];
+  const teamNamesFromProps = teams ? [teams.awayTeam.name, teams.homeTeam.name].filter(Boolean) : [];
   const TABS = ["Info", ...teamNamesFromProps];
 
-  const [activeTab, setActiveTab] = useState("Info"); // Default to Info tab
-
-  // State to hold lineups for all teams involved in this game setup session
+  const [activeTab, setActiveTab] = useState("Info");
   const [gameLineups, setGameLineups] = useState({});
 
-  // Initialize/reset lineups when the `teams` prop changes (e.g., new game loaded)
+  // This hook now populates the lineups directly from the fetched game data
   useEffect(() => {
-    console.log("GameSetupPage: useEffect triggered by 'teams' prop change:", teams);
-    const initialGameLineups = {};
-    if (teams && teams.team1Name) {
-      // Deep copy predefined lineup or start with empty array
-      initialGameLineups[teams.team1Name] = PREDEFINED_TEAM_LINEUPS[teams.team1Name]
-        ? JSON.parse(JSON.stringify(PREDEFINED_TEAM_LINEUPS[teams.team1Name]))
-        : [];
+    console.log("GameSetupPage: useEffect triggered. Initializing lineups from props:", teams);
+    
+    // Check if team data exists before trying to access it
+    if (teams && teams.awayTeam && teams.homeTeam) {
+        setGameLineups({
+            [teams.awayTeam.name]: teams.awayTeam.lineup,
+            [teams.homeTeam.name]: teams.homeTeam.lineup,
+        });
     }
-    fetch('http://localhost:3001/api/teams') // URL of your backend server
+
+    // You can keep this fetch if you need a list of ALL teams for another feature,
+    // but it's no longer needed to create the initial lineups.
+    fetch(`${API_BASE_URL}teams`) 
         .then(response => response.json())
         .then(data => {
-            console.log("Fetched teams from backend:", data);
-            setTeams(data);
+            console.log("Fetched all teams from backend:", data);
         })
         .catch(error => console.error("Error fetching teams:", error));
-    if (teams && teams.team2Name) {
-      initialGameLineups[teams.team2Name] = PREDEFINED_TEAM_LINEUPS[teams.team2Name]
-        ? JSON.parse(JSON.stringify(PREDEFINED_TEAM_LINEUPS[teams.team2Name]))
-        : [];
-    }
-    setGameLineups(initialGameLineups);
+    
     setActiveTab("Info"); // Reset to info tab when teams change
-  }, [teams]); // Dependency on the 'teams' prop
+  }, [teams]); // Dependency on the 'teams' prop is correct
 
-  // Callback for TeamLineupManager to update lineups in this component's state
   const handleLineupChange = useCallback((teamName, newLineup) => {
     setGameLineups(prevLineups => ({
       ...prevLineups,
       [teamName]: newLineup
     }));
-  }, []); // setGameLineups is stable
+  }, []);
 
-  // Called by the button in GameInfoTab
   const handleStartGame = useCallback(() => {
-    console.log("GameSetupPage: 'Confirm lineup and start game' CLICKED.");
-    console.log("GameSetupPage: Current gameLineups state to pass to App:", gameLineups);
-
+    console.log("GameSetupPage: Confirming and starting game with lineups:", gameLineups);
     if (typeof onGameStart === 'function') {
-      console.log("GameSetupPage: onGameStart prop IS a function. Calling it now.");
-      onGameStart(gameLineups); // This calls handleStartGameFromSetup in App.jsx
+      onGameStart(gameLineups);
     } else {
-      console.error("GameSetupPage: onGameStart prop is NOT a function or is undefined! Check App.jsx.");
-      alert("Developer Alert: onGameStart prop is missing or not a function in GameSetupPage! Check App.jsx.");
+      console.error("GameSetupPage: onGameStart prop is NOT a function!");
     }
   }, [gameLineups, onGameStart]);
 
-  // Prop check
-  if (!teams || !gameDetails || teamNamesFromProps.length < 2) {
-    let errorReason = "";
-    if (!teams) errorReason = "Team info missing.";
-    else if (teamNamesFromProps.length < 2) errorReason = "Not enough teams defined.";
-    else if (!gameDetails) errorReason = "Game details missing.";
-
-    console.error("GameSetupPage: Missing essential props!", { teams, gameDetails, teamNamesFromProps });
+  if (!teams || !teams.homeTeam || !teams.awayTeam || !gameDetails) {
     return (
-      <div className="iphone-container"> {/* Assuming iphone-container is styled in App.jsx's wrapper */}
-        <div className="game-setup-content" style={{ padding: '20px', color: 'red', textAlign: 'center' }}>
-            <h1>Setup Error!</h1>
-            <p>Cannot initialize game setup. {errorReason}</p>
-            <p>Please ensure App.jsx provides correct 'teams' and 'gameDetails' props.</p>
-        </div>
+      <div className="game-setup-content" style={{ padding: '20px', color: 'red', textAlign: 'center' }}>
+          <h1>Setup Error!</h1>
+          <p>Cannot initialize game setup. Essential team or game details are missing.</p>
       </div>
     );
   }
 
-  const team1PlayerCount = gameLineups[teams.team1Name]?.length || 0;
-  const team2PlayerCount = gameLineups[teams.team2Name]?.length || 0;
+  // Updated player counts to use the correct team names from the new structure
+  const awayPlayerCount = gameLineups[teams.awayTeam.name]?.length || 0;
+  const homePlayerCount = gameLineups[teams.homeTeam.name]?.length || 0;
 
   return (
-    // Removed iphone-container from here; it should be in App.jsx wrapping the pageContent
-    <div className="game-setup-content"> {/* This should be the root of GameSetupPage's own content */}
+    <div className="game-setup-content">
       <div className="tabs-container">
         {TABS.map(tabName => (
           <button
@@ -98,22 +80,24 @@ function GameSetupPage({ teams, gameDetails, onGameStart }) {
         ))}
       </div>
 
-      {activeTab === "Info" && ( // gameDetails is already checked by the prop check above
+      {activeTab === "Info" && (
         <GameInfoTab
-          team1Name={teams.team1Name}
-          team2Name={teams.team2Name}
+          // Pass the correct team names
+          team1Name={teams.awayTeam.name}
+          team2Name={teams.homeTeam.name}
           gameDetails={gameDetails}
-          team1PlayerCount={team1PlayerCount}
-          team2PlayerCount={team2PlayerCount}
+          team1PlayerCount={awayPlayerCount}
+          team2PlayerCount={homePlayerCount}
           onStartGame={handleStartGame}
         />
       )}
 
-      {teamNamesFromProps.includes(activeTab) && gameLineups[activeTab] && (
+      {teamNamesFromProps.includes(activeTab) && (
         <TeamLineupManager
           key={activeTab}
           teamName={activeTab}
-          initialLineupData={gameLineups[activeTab]} // Pass the current state for this team
+          // The initial lineup is now correctly sourced from the state
+          initialLineupData={gameLineups[activeTab] || []}
           onLineupChange={(newLineup) => handleLineupChange(activeTab, newLineup)}
         />
       )}

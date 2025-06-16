@@ -1,88 +1,153 @@
 // src/utils/gameLogic.js
 
 export const getInningSuffix = (inning) => {
-  if (typeof inning !== 'number' || isNaN(inning)) return 'th'; // Handle non-numeric or NaN
-  const absInning = Math.abs(inning); // Work with positive numbers for modulo
-  if (absInning % 10 === 1 && absInning % 100 !== 11) return 'st';
-  if (absInning % 10 === 2 && absInning % 100 !== 12) return 'nd';
-  if (absInning % 10 === 3 && absInning % 100 !== 13) return 'rd';
-  return 'th';
+  if (inning % 100 >= 11 && inning % 100 <= 13) return 'th';
+  switch (inning % 10) {
+    case 1: return 'st';
+    case 2: return 'nd';
+    case 3: return 'rd';
+    default: return 'th';
+  }
 };
 
-/**
- * Finds a player by ID from one or two lineups.
- * Assumes player IDs are unique across the provided lineups if searching both.
- */
-export const getPlayerById = (playerId, lineup1 = [], lineup2 = []) => {
+export const getPlayerById = (playerId, homeTeamLineup, awayTeamLineup) => {
   if (!playerId) return null;
-  let player = lineup1.find(p => p && p.id === playerId);
-  if (!player && lineup2 && lineup2.length > 0) {
-    player = lineup2.find(p => p && p.id === playerId);
-  }
-  return player || null; // Return the player object or null if not found
+  const allPlayers = [...(homeTeamLineup || []), ...(awayTeamLineup || [])];
+  return allPlayers.find(p => p.id === playerId);
 };
 
-/**
- * Extracts active runners from the bases object and enriches them with player details.
- * Needs access to both team lineups to find player details by ID.
- */
-export const extractRunners = (bases, homeLineup = [], awayLineup = []) => {
-  const runners = [];
-  if (!bases) return runners;
-
-  const processBase = (baseId, startingBaseNum) => {
-    if (baseId) {
-      const playerDetails = getPlayerById(baseId, homeLineup, awayLineup);
-      if (playerDetails) {
-        runners.push({ ...playerDetails, id: playerDetails.id, startingBase: startingBaseNum });
-      } else {
-        // Optional: log if a player ID on base couldn't be found in lineups
-        console.warn(`Player ID ${baseId} on base ${startingBaseNum} not found in provided lineups.`);
-        // Add a placeholder if needed, or just skip
-        // runners.push({ id: baseId, name: "Unknown Runner", number: "??", startingBase: startingBaseNum });
-      }
+const calculateBattingInfo = (state) => {
+    const { homeTeamLineup, awayTeamLineup, isTopInning, currentBatterIndex } = state;
+    const battingTeamName = isTopInning ? state.awayTeamName : state.homeTeamName;
+    const currentLineup = isTopInning ? awayTeamLineup : homeTeamLineup;
+    const batterIdx = isTopInning ? currentBatterIndex.away : currentBatterIndex.home;
+    
+    if (!currentLineup || currentLineup.length === 0) {
+        return { batter: null, onDeck: null, inTheHole: null, battingTeamName };
     }
+
+    const batter = currentLineup[batterIdx] || null;
+    const onDeck = currentLineup[(batterIdx + 1) % currentLineup.length] || null;
+    const inTheHole = currentLineup[(batterIdx + 2) % currentLineup.length] || null;
+
+    return { batter, onDeck, inTheHole, battingTeamName };
+};
+
+export const initialGameState = (initData) => {
+  const baseState = {
+    homeTeamLineup: initData.homeTeamLineup || [],
+    awayTeamLineup: initData.awayTeamLineup || [],
+    homeTeamName: initData.homeTeamName || 'Home',
+    awayTeamName: initData.awayTeamName || 'Away',
+    gameDetails: initData.gameDetails || {},
+    currentInning: 1,
+    isTopInning: true,
+    outs: 0,
+    score: { home: 0, away: 0 },
+    bases: { first: null, second: null, third: null },
+    currentBatterIndex: { home: 0, away: 0 },
+    currentPlay: { type: null, stage: null, details: {} },
+    isGameOver: false,
+    history: [],
   };
-
-  processBase(bases.first, 1);
-  processBase(bases.second, 2);
-  processBase(bases.third, 3);
-
-  // Sort R3, R2, R1 for display order in PlayResolutionPage or similar contexts
-  return runners.sort((a, b) => b.startingBase - a.startingBase);
+  const battingInfo = calculateBattingInfo(baseState);
+  return { ...baseState, battingInfo };
 };
 
-/**
- * Gets the current batter and the next few batters from a lineup.
- */
-export const getBattingOrderInfo = (lineup = [], currentIndex = 0) => {
-  if (!lineup || lineup.length === 0) {
-    return { currentBatter: null, upNext: [] };
-  }
+export const gameReducer = (state, action) => {
+  switch (action.type) {
+    case 'START_PLAY':
+      return {
+        ...state,
+        currentPlay: {
+          ...state.currentPlay,
+          type: action.payload.playType,
+          stage: 'awaitingLocation',
+        },
+      };
 
-  const lineupSize = lineup.length;
-  const normalizedIndex = lineupSize > 0 ? currentIndex % lineupSize : 0;
-  const currentBatter = lineup[normalizedIndex] || null;
+    case 'CANCEL_PLAY':
+      return {
+        ...state,
+        currentPlay: { type: null, stage: null, details: {} },
+      };
 
-  const upNext = [];
-  if (lineupSize > 0) {
-    const addedToUpNext = new Set();
-    if (currentBatter) {
-        addedToUpNext.add(currentBatter.id); // Don't list current batter as up next
-    }
+    // --- FIX: This is the completely new, intelligent RESOLVE_PLAY logic ---
+    case 'RESOLVE_PLAY': {
+      // Create a mutable copy of the state to work with
+      const nextState = JSON.parse(JSON.stringify(state));
+      const playOutcomes = action.payload; // This comes from PlayResolutionPage
 
-    for (let i = 1; i <= lineupSize; i++) { // Iterate enough to fill upNext or exhaust lineup
-      if (upNext.length >= 3) break; // We only need up to 3 players for "up next"
+      let outsThisPlay = 0;
+      let runsThisPlay = 0;
 
-      const nextPlayerIndex = (normalizedIndex + i) % lineupSize;
-      const nextPlayer = lineup[nextPlayerIndex];
+      // Reset bases for the new state
+      const newBases = { first: null, second: null, third: null };
 
-      if (nextPlayer && !addedToUpNext.has(nextPlayer.id)) {
-        upNext.push(nextPlayer);
-        addedToUpNext.add(nextPlayer.id);
+      // Process each player involved in the play
+      playOutcomes.forEach(outcome => {
+        if (outcome.status === 'out') {
+          outsThisPlay++;
+        }
+        if (outcome.status === 'safe') {
+          if (outcome.finalBase === 'H') {
+            runsThisPlay++;
+          } else {
+            // Place the player on their new base
+            if(outcome.finalBase === 1) newBases.first = outcome.id;
+            if(outcome.finalBase === 2) newBases.second = outcome.id;
+            if(outcome.finalBase === 3) newBases.third = outcome.id;
+          }
+        }
+      });
+
+      // Update the state with the new base runners
+      nextState.bases = newBases;
+
+      // Update score
+      if (runsThisPlay > 0) {
+        if (nextState.isTopInning) {
+          nextState.score.away += runsThisPlay;
+        } else {
+          nextState.score.home += runsThisPlay;
+        }
       }
-    }
-  }
-  return { currentBatter, upNext };
-};
 
+      // Update outs and check for end of inning
+      nextState.outs += outsThisPlay;
+      if (nextState.outs >= 3) {
+        // End of the half-inning
+        nextState.outs = 0;
+        nextState.bases = { first: null, second: null, third: null };
+        
+        if (nextState.isTopInning) {
+          // Move to bottom of the inning
+          nextState.isTopInning = false;
+        } else {
+          // Move to top of the next inning
+          nextState.isTopInning = true;
+          nextState.currentInning++;
+        }
+      }
+
+      // Advance the batter for the next play
+      if (nextState.isTopInning) {
+        nextState.currentBatterIndex.away = (nextState.currentBatterIndex.away + 1) % nextState.awayTeamLineup.length;
+      } else {
+        nextState.currentBatterIndex.home = (nextState.currentBatterIndex.home + 1) % nextState.homeTeamLineup.length;
+      }
+
+      // Recalculate batting info for the new batter
+      nextState.battingInfo = calculateBattingInfo(nextState);
+
+      // Reset the current play and save history
+      nextState.currentPlay = { type: null, stage: null, details: {} };
+      nextState.history = [...state.history, state];
+
+      return nextState;
+    }
+
+    default:
+      return state;
+  }
+};
