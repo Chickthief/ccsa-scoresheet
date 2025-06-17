@@ -110,8 +110,9 @@ function PlayResolutionPage({
   // initialGameOuts, // Not directly displayed, total outs in main GameStateBar
   onPlayFinalized,
   onGoBack,
-  // homeTeamLineup, // Not strictly needed if currentBatter/runnersOnBaseStart have full player objects
-  // awayTeamLineup,
+  inning,
+  isTopInning,
+  inningScores,
 }) {
   const playersInvolved = useMemo(() => {
     const batterObj = {
@@ -164,6 +165,14 @@ function PlayResolutionPage({
   const outsThisPlay = useMemo(() => Object.values(pendingOutcomes).filter(o => o.status === 'out').length, [pendingOutcomes]);
   const runsThisPlay = useMemo(() => Object.values(pendingOutcomes).filter(o => o.status === 'safe' && o.finalBase === 'H').length, [pendingOutcomes]);
 
+  const runsSoFarInInning = useMemo(() => {
+    if (!inningScores) return 0;
+    const teamKey = isTopInning ? 'away' : 'home';
+    const inningIndex = inning - 1;
+    // The `|| 0` handles cases where the array might not have an entry yet
+    return inningScores[teamKey][inningIndex] || 0;
+  }, [inningScores, isTopInning, inning]);
+  
   const currentPendingBasesForDiamond = useMemo(() => {
     const bases = { first: null, second: null, third: null };
     playersInvolved.forEach(p => {
@@ -227,6 +236,7 @@ function PlayResolutionPage({
         <div className="prp-live-stats">
           <p>Outs this play: {outsThisPlay}</p>
           <p>Runs this play: {runsThisPlay}</p>
+          <p>Total runs this inning: {runsSoFarInInning + runsThisPlay}</p>
         </div>
       </div>
 

@@ -122,6 +122,9 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
           onPlayFinalized={handlePlayResolved}
           onGoBack={() => dispatch({ type: 'CANCEL_PLAY' })}
           currentPlay={gameState.currentPlay}
+          inning={gameState.inning}
+          isTopInning={gameState.isTopInning}
+          inningScores={gameState.inningScores}
         />
       </div>
     );
