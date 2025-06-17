@@ -995,7 +995,7 @@ p {
 .prp-live-stats p {
   margin: 3px 0;
   font-weight: 500;
-  font-size: 1em;
+  font-size: 0.8em;
 }
 
 /* New section for advancement summary */
@@ -1218,6 +1218,12 @@ p {
     border-color: #dc3545;
 }
 
+.more-menu-popup .end-inning-button {
+    background-color: orange;
+    color: white;
+    border-color: orange;
+}
+
 .more-menu-popup .end-game-button:hover {
     background-color: #c82333;
 }
@@ -1355,4 +1361,33 @@ p {
 .linescore-table .final-score-col {
   font-weight: bold;
   background-color: #e9e9e9;
+}
+
+.modal-actions.mercy-actions {
+  display: flex;
+  flex-direction: column; /* Stack the button rows */
+  align-items: center;
+  gap: 10px; /* Space between the rows */
+  width: 100%;
+  margin-top: 20px;
+}
+
+.modal-actions-top-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px; /* Space between the top two buttons */
+  width: 100%;
+}
+
+.mercy-button {
+  flex: 1; /* Allow buttons to share space equally */
+  white-space: normal; /* Allow text to wrap */
+  padding: 12px 8px;
+  height: auto;
+  line-height: 1.2;
+}
+
+.secondary-action-button.small-text {
+  font-size: 12px;
+  padding: 6px 12px;
 }

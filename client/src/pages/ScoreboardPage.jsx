@@ -28,6 +28,7 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
   const [playToConfirm, setPlayToConfirm] = useState(null);
   const fielderSelectOverlayRef = useRef(null);
   const [isLinescoreOpen, setIsLinescoreOpen] = useState(false);
+  const [noMercyThisInning, setNoMercyThisInning] = useState(false);
 
   useEffect(() => {
     if (gameState.isGameOver && typeof onGameOver === 'function') {
@@ -47,6 +48,10 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isSelectingFielder]);
+
+  useEffect(() => {
+    setNoMercyThisInning(false);
+  }, [gameState.inning, gameState.isTopInning]);
 
   const handlePlayAction = (playType) => {
     if (playType.includes('To')) {
@@ -73,7 +78,15 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
     setIsSelectingFielder(false);
     dispatch({ type: 'START_PLAY', payload: { playType: currentHitType, fielder } });
   };
-  const handlePlayResolved = (playDetails) => dispatch({ type: 'RESOLVE_PLAY', payload: playDetails });
+  const handlePlayResolved = (playDetails) => {
+    // Check if it's the special mercy rule payload
+    if (playDetails.type === 'MERCY_RULE_END_INNING') {
+      dispatch({ type: playDetails.type, payload: playDetails.payload });
+    } else {
+      // It's a normal play
+      dispatch({ type: 'RESOLVE_PLAY', payload: playDetails });
+    }
+  };
   const handleUndo = () => dispatch({ type: 'UNDO' });
   const handleSkipBatter = () => dispatch({ type: 'SKIP_BATTER' });
   const handleEndGameConfirm = () => dispatch({ type: 'END_GAME' });
@@ -125,6 +138,8 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
           inning={gameState.inning}
           isTopInning={gameState.isTopInning}
           inningScores={gameState.inningScores}
+          noMercyThisInning={noMercyThisInning}
+          onSetNoMercy={setNoMercyThisInning}
         />
       </div>
     );

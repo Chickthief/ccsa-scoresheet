@@ -1,6 +1,7 @@
 // src/components/scoreboard/PlayResolutionPage.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import SmallBaseballDiamondDisplay from './SmallBaseballDiamondDisplay'; // You'll need to create this component
+import SmallBaseballDiamondDisplay from './SmallBaseballDiamondDisplay';
+import { MERCY_RULE_SCORE } from '../../utils/constants';
 
 // Helper to get player display info (number and first name)
 const getPlayerDisplaySimple = (player) => {
@@ -107,12 +108,13 @@ function PlayerOutcomeSelector({ player, onOutcomeChange, currentOutcome, occupi
 function PlayResolutionPage({
   currentBatter,
   runnersOnBaseStart,
-  // initialGameOuts, // Not directly displayed, total outs in main GameStateBar
   onPlayFinalized,
   onGoBack,
   inning,
   isTopInning,
   inningScores,
+  noMercyThisInning,
+  onSetNoMercy,
 }) {
   const playersInvolved = useMemo(() => {
     const batterObj = {
@@ -134,6 +136,10 @@ function PlayResolutionPage({
   }, [currentBatter, runnersOnBaseStart]);
 
   const [pendingOutcomes, setPendingOutcomes] = useState({});
+  const [mercyRuleInfo, setMercyRuleInfo] = useState({
+    isOpen: false,
+    triggeringPlayerId: null,
+  });
 
   useEffect(() => {
     const outcomes = {};
@@ -145,10 +151,18 @@ function PlayResolutionPage({
   }, [playersInvolved]);
 
   const handlePlayerOutcomeChange = (playerId, newOutcome) => {
-    setPendingOutcomes(prev => ({
-      ...prev,
-      [playerId]: { ...(prev[playerId]), ...newOutcome }
-    }));
+    const newPendingOutcomes = {
+      ...pendingOutcomes,
+      [playerId]: { ...(pendingOutcomes[playerId]), ...newOutcome }
+    };
+    setPendingOutcomes(newPendingOutcomes);
+
+    if (newOutcome.status === 'safe' && newOutcome.finalBase === 'H') {
+      const newRunsThisPlay = Object.values(newPendingOutcomes).filter(o => o.status === 'safe' && o.finalBase === 'H').length;
+      if ((runsSoFarInInning + newRunsThisPlay >= MERCY_RULE_SCORE) && !noMercyThisInning) {
+        setMercyRuleInfo({ isOpen: true, triggeringPlayerId: playerId });
+      }
+    }
   };
 
   const occupiedBasesMap = useMemo(() => {
@@ -169,8 +183,7 @@ function PlayResolutionPage({
     if (!inningScores) return 0;
     const teamKey = isTopInning ? 'away' : 'home';
     const inningIndex = inning - 1;
-    // The `|| 0` handles cases where the array might not have an entry yet
-    return inningScores[teamKey][inningIndex] || 0;
+    return inningScores[teamKey]?.[inningIndex] || 0;
   }, [inningScores, isTopInning, inning]);
   
   const currentPendingBasesForDiamond = useMemo(() => {
@@ -222,9 +235,36 @@ function PlayResolutionPage({
     onPlayFinalized(finalizedPlayerOutcomes);
   };
 
+  
+  const handleMercyEndInning = () => {
+    const finalizedOutcomes = playersInvolved.map(p => ({
+      id: p.id,
+      status: pendingOutcomes[p.id].status,
+      finalBase: pendingOutcomes[p.id].finalBase,
+    }));
+    // Dispatch a special action with the outcomes and a mercy flag
+    onPlayFinalized({ type: 'MERCY_RULE_END_INNING', payload: finalizedOutcomes });
+  };
+  
+  // For "this inning has NO MERCY"
+  const handleNoMercy = () => {
+    onSetNoMercy(true); // Set the state in the parent component
+    setMercyRuleInfo({ isOpen: false, triggeringPlayerId: null });
+  };
+
+
   if (!currentBatter || !runnersOnBaseStart) {
     return <div className="play-resolution-page"><p>Loading play data...</p></div>;
   }
+
+  const handleMercyGoBack = () => {
+    const { triggeringPlayerId } = mercyRuleInfo;
+    if (triggeringPlayerId) {
+      // Revert the action that triggered the popup by deselecting 'HOME'
+      handlePlayerOutcomeChange(triggeringPlayerId, { ...pendingOutcomes[triggeringPlayerId], finalBase: null });
+    }
+    setMercyRuleInfo({ isOpen: false, triggeringPlayerId: null });
+  };
 
   return (
     <div className="play-resolution-page">
@@ -236,6 +276,7 @@ function PlayResolutionPage({
           <p>Outs this play: {outsThisPlay}</p>
           <p>Runs this play: {runsThisPlay}</p>
           <p>Total runs this inning: {runsSoFarInInning + runsThisPlay}</p>
+          {noMercyThisInning && <p>This inning has NO MERCY.</p>}
         </div>
       </div>
 
@@ -273,7 +314,6 @@ function PlayResolutionPage({
             );
         })}
       </div>
-
       <div className="prp-action-buttons-footer">
         <button
           onClick={onGoBack}
@@ -289,6 +329,29 @@ function PlayResolutionPage({
           End this at bat
         </button>
       </div>
+      {mercyRuleInfo.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>That's mercy!</h2>
+            <p>The total for the inning has reached {MERCY_RULE_SCORE} runs.</p>
+
+            {/* --- MODIFIED JSX STRUCTURE --- */}
+            <div className="modal-actions mercy-actions">
+              <div className="modal-actions-top-row">
+                <button onClick={handleMercyEndInning} className="button-ccsa mercy-button">
+                  End inning with {MERCY_RULE_SCORE} runs
+                </button>
+                <button onClick={handleNoMercy} className="button-ccsa mercy-button">
+                  This inning has NO MERCY
+                </button>
+              </div>
+              <button onClick={handleMercyGoBack} className="button-ccsa secondary-action-button small-text">
+                Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

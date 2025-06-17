@@ -107,17 +107,17 @@ function ActionButtons({
             <button onClick={handleUndoClick} className="menu-button">
               Undo Last Play
             </button>
-            <button onClick={handleEndInningClick} className="menu-button">
-              End Inning
-            </button>
             <button onClick={handleSkipBatterClick} className="menu-button">
               Skip Batter
             </button>
-            <button onClick={handleEndGame} className="menu-button end-game-button">
-              End Game
-            </button>
             <button onClick={handleViewLinescoreClick} className="menu-button">
               View Linescore
+            </button>
+            <button onClick={handleEndInningClick} className="menu-button end-inning-button">
+              End Inning
+            </button>
+            <button onClick={handleEndGame} className="menu-button end-game-button">
+              End Game
             </button>
           </div>
         )}

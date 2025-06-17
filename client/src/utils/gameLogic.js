@@ -1,4 +1,4 @@
-// src/utils/gameLogic.js
+import { MERCY_RULE_SCORE } from "./constants";
 
 // --- HELPER FUNCTIONS ---
 export const getPlayerById = (playerId, lineup1 = [], lineup2 = []) => {
@@ -51,8 +51,8 @@ export const initialGameState = (initArgs) => {
         gameDetails: initArgs.gameDetails || {},
         currentPlay: { type: null, stage: null, details: {} },
         inningScores: {
-          away: [0], // Initialize for the top of the 1st inning
-          home: []   // Home team hasn't batted yet
+          away: [0],
+          home: []
         },
     };
 };
@@ -117,20 +117,16 @@ export function gameReducer(state, action) {
                 const inningIndex = newState.inning - 1;
                 newState.inningScores[teamKey][inningIndex] = (newState.inningScores[teamKey][inningIndex] || 0) + runsThisPlay;
             }
-
-            // --- THIS IS THE FIX ---
-            // The following two lines were duplicated. I have removed the extra set.
+            
             newState.score[newState.isTopInning ? 'away' : 'home'] += runsThisPlay;
             newState.outs += outsThisPlay;
             
-            // Advance the batter index
             const battingTeamKey = newState.isTopInning ? 'away' : 'home';
             const battingLineup = newState[`${battingTeamKey}TeamLineup`];
             if (battingLineup && battingLineup.length > 0) {
                 newState.currentBatterIndex[battingTeamKey] = (newState.currentBatterIndex[battingTeamKey] + 1) % battingLineup.length;
             }
             
-            // If the inning is over, reset for the next half-inning
             if (newState.outs >= 3) {
                 const wasTop = newState.isTopInning;
                 newState.outs = 0;
@@ -146,7 +142,6 @@ export function gameReducer(state, action) {
                 }
             }
 
-            // Update batting info for the team that is now up to bat
             const nextTeamKey = newState.isTopInning ? 'away' : 'home';
             const nextLineup = newState[`${nextTeamKey}TeamLineup`];
             const nextIndex = newState.currentBatterIndex[nextTeamKey];
@@ -159,31 +154,24 @@ export function gameReducer(state, action) {
             return saveState(newState);
         }
         
-        // ... (rest of the cases: SKIP_BATTER, UNDO, etc. remain the same)
         case 'SKIP_BATTER': {
             let newState = { ...state };
             const teamKey = newState.isTopInning ? 'away' : 'home';
             const currentLineup = newState[`${teamKey}TeamLineup`];
-
             if (!currentLineup || currentLineup.length === 0) return state;
-
             const newIndex = (newState.currentBatterIndex[teamKey] + 1) % currentLineup.length;
             newState.currentBatterIndex[teamKey] = newIndex;
-            
             newState.battingInfo = {
                 ...getBattingOrderInfo(currentLineup, newIndex),
                 battingTeamName: newState[`${teamKey}TeamName`]
             };
-            
             return saveState(newState);
         }
 
         case 'UNDO': {
             if (!state.gameHistory || state.gameHistory.length === 0) return state;
-            
             const previousState = state.gameHistory[state.gameHistory.length - 1];
             const newHistory = state.gameHistory.slice(0, -1);
-
             return {
                 ...previousState,
                 gameHistory: newHistory,
@@ -223,11 +211,92 @@ export function gameReducer(state, action) {
             
             return saveState(newState);
         }
+        
+        case 'MERCY_RULE_END_INNING': {
+            const runnerOutcomes = action.payload;
+            const newState = {
+                ...state,
+                score: { ...state.score },
+                bases: { ...state.bases },
+                currentBatterIndex: { ...state.currentBatterIndex },
+                inningScores: {
+                    away: [...state.inningScores.away],
+                    home: [...state.inningScores.home],
+                }
+            };
+            
+            let runsThisPlay = 0;
+            let outsThisPlay = 0;
+            let currentBases = { ...newState.bases };
+
+            for (const runner of runnerOutcomes) {
+                for (const base in currentBases) {
+                    if (currentBases[base] === runner.id) {
+                        currentBases[base] = null;
+                    }
+                }
+            }
+            for (const runner of runnerOutcomes) {
+                if (runner.status === 'safe') {
+                    const baseName = runner.finalBase === 1 ? 'first' : runner.finalBase === 2 ? 'second' : 'third';
+                    if (runner.finalBase >= 1 && runner.finalBase <= 3) {
+                        currentBases[baseName] = runner.id;
+                    } else if (runner.finalBase === 'H') {
+                        runsThisPlay++;
+                    }
+                } else if (runner.status === 'out') {
+                    outsThisPlay++;
+                }
+            }
+            newState.bases = currentBases;
+            newState.outs += outsThisPlay;
+
+            const teamKey = newState.isTopInning ? 'away' : 'home';
+            const inningIndex = newState.inning - 1;
+            const runsSoFarInInning = newState.inningScores[teamKey][inningIndex] || 0;
+            
+            const runsAllowedToScore = Math.max(0, MERCY_RULE_SCORE - runsSoFarInInning);
+            const runsToCountForPlay = Math.min(runsThisPlay, runsAllowedToScore);
+
+            if (runsToCountForPlay > 0) {
+                newState.inningScores[teamKey][inningIndex] += runsToCountForPlay;
+                newState.score[teamKey] += runsToCountForPlay;
+            }
+
+            const battingTeamKey = newState.isTopInning ? 'away' : 'home';
+            const battingLineup = newState[`${battingTeamKey}TeamLineup`];
+            if (battingLineup && battingLineup.length > 0) {
+                newState.currentBatterIndex[battingTeamKey] = (newState.currentBatterIndex[battingTeamKey] + 1) % battingLineup.length;
+            }
+
+            const wasTop = newState.isTopInning;
+            newState.outs = 0;
+            newState.bases = { first: null, second: null, third: null };
+            newState.isTopInning = !wasTop;
+            
+            if (!wasTop) {
+                newState.inning++;
+                if (newState.inning <= 7 || newState.score.home === newState.score.away) {
+                    newState.inningScores.away.push(0);
+                    newState.inningScores.home.push(0);
+                }
+            }
+            
+            const nextTeamKey = newState.isTopInning ? 'away' : 'home';
+            const nextLineup = newState[`${nextTeamKey}TeamLineup`];
+            const nextIndex = newState.currentBatterIndex[nextTeamKey];
+            newState.battingInfo = {
+                ...getBattingOrderInfo(nextLineup, nextIndex),
+                battingTeamName: newState[`${nextTeamKey}TeamName`]
+            };
+
+            newState.currentPlay = { type: null, stage: null, details: {} };
+            return saveState(newState);
+        }
 
         case 'END_GAME': {
             return { ...state, isGameOver: true };
         }
-
 
         default:
             return state;
