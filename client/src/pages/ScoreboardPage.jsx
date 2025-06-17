@@ -8,6 +8,7 @@ import BaseballDiamond from '../components/scoreboard/BaseballDiamond';
 import PlayResolutionPage from '../components/scoreboard/PlayResolutionPage';
 import ConfirmEndGameModal from '../components/scoreboard/ConfirmEndGameModal';
 import ConfirmPlayModal from '../components/scoreboard/ConfirmPlayModal';
+import ViewLine from '../components/scoreboard/ViewLine';
 
 function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
   const [gameState, dispatch] = useReducer(
@@ -92,8 +93,9 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
   const handleEndGameConfirm = () => dispatch({ type: 'END_GAME' });
   const handleEndInning = () => setPlayToConfirm('endInning');
   const handleToggleLinescore = () => setIsLinescoreOpen(prev => !prev);
+  const handleToggleLineup = () => setIsLinescoreOpen(prev => !prev);
   
-  // --- FIX: Define the missing stopPropagation function here ---
+
   const stopPropagation = (e) => e.stopPropagation();
 
   const { batter, onDeck, inTheHole, battingTeamName } = gameState.battingInfo || {};
@@ -150,6 +152,10 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
       <GameStateBar {...gameState} />
       <div className="scoreboard-main-content-area">
         <BattingInfo currentBatter={batter} upNext={[onDeck, inTheHole]} battingTeamName={battingTeamName} />
+        <ViewLine
+            onViewLinescore={handleToggleLinescore}
+            onViewLineup={handleToggleLineup}
+        />
         <BaseballDiamond
             batterName={batter ? batter.name.split(' ')[0] : ''}
             batterNumber={batter ? batter.number : ''}
@@ -165,7 +171,6 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
         onEndGameClick={() => setIsEndGameModalOpen(true)}
         onSkipBatter={handleSkipBatter}
         onEndInning={handleEndInning}
-        onViewLinescore={handleToggleLinescore}
         disableOutcomeButtons={isSelectingFielder || (gameState.currentPlay && gameState.currentPlay.stage === 'awaitingLocation')}
         selectedHitType={isSelectingFielder ? currentHitType : null}
       />

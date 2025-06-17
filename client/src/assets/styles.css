@@ -429,13 +429,10 @@ p {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* background-color: #f9f9f9; /* Can remove if image covers it */
-  padding: 10px 0; /* Some padding around the diamond area */
+  margin-top: 20px;
 }
 
 .field-area {
-  /* width is set by inline style in JSX */
-  /* height is set by inline style in JSX */
   background-size: contain; /* Or 'cover' if you prefer, 'contain' ensures whole image is visible */
   background-repeat: no-repeat;
   background-position: center;

@@ -8,8 +8,7 @@ function ActionButtons({
   disableOutcomeButtons,
   onSkipBatter,
   selectedHitType,
-  onEndInning,
-  onViewLinescore
+  onEndInning
 }) {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const menuRef = useRef(null);
@@ -46,10 +45,6 @@ function ActionButtons({
     onEndInning();
     setShowMoreMenu(false); // Close menu after action
   };
-  const handleViewLinescoreClick = () => {
-    onViewLinescore();
-    setShowMoreMenu(false);
-  };
 
   return (
     <div className="action-buttons-area">
@@ -57,23 +52,20 @@ function ActionButtons({
         <button
           className={`button-ccsa ${selectedHitType === 'flyHitTo' ? 'active-play' : ''}`}
           onClick={() => onPlayAction('flyHitTo')}
-          // The "disabled" prop is removed from this button
         >
-          Fly hit to
+          Fly to
         </button>
         <button
           className={`button-ccsa ${selectedHitType === 'lineDriveTo' ? 'active-play' : ''}`}
           onClick={() => onPlayAction('lineDriveTo')}
-          // The "disabled" prop is removed from this button
         >
-          Line drive to
+          Line to
         </button>
         <button
           className={`button-ccsa ${selectedHitType === 'grounderTo' ? 'active-play' : ''}`}
           onClick={() => onPlayAction('grounderTo')}
-          // The "disabled" prop is removed from this button
         >
-          Grounder to
+          Ground to
         </button>
       </div>
       <div className="outcome-actions">
@@ -109,9 +101,6 @@ function ActionButtons({
             </button>
             <button onClick={handleSkipBatterClick} className="menu-button">
               Skip Batter
-            </button>
-            <button onClick={handleViewLinescoreClick} className="menu-button">
-              View Linescore
             </button>
             <button onClick={handleEndInningClick} className="menu-button end-inning-button">
               End Inning
