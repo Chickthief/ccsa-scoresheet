@@ -1,49 +1,74 @@
 // src/components/scoreboard/BaseballDiamond.jsx
 import React from 'react';
-// Make sure this path is correct for your project structure:
 import diamondImg from '../../assets/baseball_diamond_full.png';
 
 // --- CONFIGURATION CONSTANTS ---
-// Adjust DIAMOND_DISPLAY_WIDTH to set the rendered width of the diamond.
-// The height will be calculated based on the aspect ratio.
-const DIAMOND_DISPLAY_WIDTH = 300; // Example: Render the diamond at 300px width
-
-// Calculate this from your actual image file (original width / original height)
-// Example: if your image is 750px wide and 812px tall:
-const DIAMOND_ASPECT_RATIO = 750 / 812; // Replace with your image's actual aspect ratio
+const DIAMOND_DISPLAY_WIDTH = 300;
+const DIAMOND_ASPECT_RATIO = 750 / 812;
 const DIAMOND_DISPLAY_HEIGHT = DIAMOND_DISPLAY_WIDTH * DIAMOND_ASPECT_RATIO;
-
-// ** CRITICAL: Adjust these coordinates to accurately pinpoint home plate **
-// ** on YOUR image at the DIAMOND_DISPLAY_WIDTH/HEIGHT size. **
-// (0,0) is the top-left of the diamond image.
 const HOME_PLATE_COORDS = {
-  x: DIAMOND_DISPLAY_WIDTH / 2,       // Assumes home plate is horizontally centered
-  y: DIAMOND_DISPLAY_HEIGHT * 0.86, // Example: 86% down from the top. ADJUST THIS!
+  x: DIAMOND_DISPLAY_WIDTH / 2,
+  y: DIAMOND_DISPLAY_HEIGHT * 0.86,
 };
-// --- END CONFIGURATION CONSTANTS ---
+
+// --- UPDATED: FIELDER POSITIONS WITH ROVERS ---
+const fielderPositions = [
+    { name: 'P', x: '50%', y: '57%' },
+    { name: 'C', x: '50%', y: '92%' },
+    { name: '1B', x: '72%', y: '56%' },
+    { name: '2B', x: '62%', y: '40%' },
+    { name: '3B', x: '28%', y: '56%' },
+    { name: 'SS', x: '38%', y: '40%' },
+    { name: 'LF', x: '10%', y: '20%' },
+    { name: 'LR', x: '30%', y: '25%' }, // Left Rover
+    { name: 'CF', x: '50%', y: '10%' },
+    { name: 'RR', x: '70%', y: '25%' }, // Right Rover
+    { name: 'RF', x: '90%', y: '20%' },
+];
+
+// --- FIELDER SELECTION SUB-COMPONENT (No changes needed here) ---
+function FielderButtons({ onFielderSelected, forwardedRef }) {
+    return (
+        <div className="fielder-selection-overlay" ref={forwardedRef}>
+            {fielderPositions.map(fielder => (
+                <button
+                    key={fielder.name}
+                    className="fielder-button"
+                    style={{ left: fielder.x, top: fielder.y }}
+                    onClick={() => onFielderSelected(fielder.name)}
+                >
+                    {fielder.name}
+                </button>
+            ))}
+        </div>
+    );
+}
+
 
 function BaseballDiamond({
-  batterName,      // String: e.g., "Steven"
-  batterNumber,    // String: e.g., "07"
-  runners,         // Object: e.g., { first: true, second: false, third: true }
-  hitLocationVisual, // Object: e.g., { x: 150, y: 100 } or null
-  onFieldClick     // Function: called with {x, y} when field is clicked in 'awaitingLocation' mode
+  batterName,
+  batterNumber,
+  runners,
+  hitLocationVisual,
+  onFieldClick,
+  isSelectingFielder,
+  onFielderSelected,
+  overlayRef,
 }) {
 
-  // Provide a default for runners if it's undefined or null
   const safeRunners = runners || { first: false, second: false, third: false };
 
   const handleDiamondClick = (event) => {
-    if (!onFieldClick) return; // Only process click if the handler is provided
+    if (!onFieldClick || isSelectingFielder) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left; // x coordinate within the .field-area div
-    const y = event.clientY - rect.top;  // y coordinate within the .field-area div
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
 
     onFieldClick({ x, y });
   };
 
-  return (
+return (
     <div className="baseball-diamond-container">
       <div
         className="field-area"
@@ -51,11 +76,19 @@ function BaseballDiamond({
           backgroundImage: `url(${diamondImg})`,
           width: `${DIAMOND_DISPLAY_WIDTH}px`,
           height: `${DIAMOND_DISPLAY_HEIGHT}px`,
-          cursor: onFieldClick ? 'crosshair' : 'default', // Change cursor when clickable
+          cursor: onFieldClick && !isSelectingFielder ? 'crosshair' : 'default',
         }}
         onClick={onFieldClick ? handleDiamondClick : undefined}
       >
-        {/* Runner Markers - CSS will position these based on class names */}
+        {isSelectingFielder && (
+          <FielderButtons 
+            onFielderSelected={onFielderSelected} 
+            // --- NEW: Pass the ref to the button component ---
+            forwardedRef={overlayRef} 
+          />
+        )}
+
+        {/* Runner Markers and other elements remain the same */}
         {safeRunners.first && (
           <div className="runner-on-base first-base-occupied">
             <span className="runner-label">
@@ -77,42 +110,26 @@ function BaseballDiamond({
             </span>
           </div>
         )}
-        {/* Visual for ball hit path and location */}
         {hitLocationVisual && hitLocationVisual.x !== undefined && hitLocationVisual.y !== undefined && (
           <>
-            <svg
-              className="ball-path-svg"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%', // SVG covers the whole .field-area
-                height: '100%',
-                pointerEvents: 'none', // So SVG doesn't block clicks on .field-area
-              }}
-            >
-              {/* DEBUG MARKER FOR HOME PLATE - Adjust HOME_PLATE_COORDS then REMOVE this circle */}
-              <circle cx={HOME_PLATE_COORDS.x} cy={HOME_PLATE_COORDS.y} r="4" fill="red" stroke="#660000" strokeWidth="1" />
-
+            <svg className="ball-path-svg" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
               <line
                 x1={HOME_PLATE_COORDS.x}
                 y1={HOME_PLATE_COORDS.y}
                 x2={hitLocationVisual.x}
                 y2={hitLocationVisual.y}
                 stroke="yellow"
-                strokeWidth="3" // Or adjust as needed
-                strokeDasharray="4,4" // Dotted/dashed line
+                strokeWidth="3"
+                strokeDasharray="4,4"
               />
             </svg>
-
-            {/* Dot for the ball's final location */}
             <div
               className="ball-dot-marker"
               style={{
                 position: 'absolute',
                 left: `${hitLocationVisual.x}px`,
                 top: `${hitLocationVisual.y}px`,
-                transform: 'translate(-50%, -50%)', // Centers the dot on the coordinates
+                transform: 'translate(-50%, -50%)',
                 pointerEvents: 'none',
               }}
             ></div>

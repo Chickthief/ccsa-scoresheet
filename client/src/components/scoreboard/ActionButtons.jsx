@@ -4,31 +4,22 @@ import React, { useState, useEffect, useRef } from 'react';
 function ActionButtons({
   onPlayAction,
   onUndo,
-  onEndGameClick, // <-- Add this new prop
+  onEndGameClick,
   disableOutcomeButtons,
-  currentPlayType,
-  currentPlayStage,
-  onSkipBatter
+  onSkipBatter,
+  selectedHitType
 }) {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const menuRef = useRef(null);
 
-  // Helper to determine if a button is active
-  const isActivePlay = (buttonActionType) => {
-    return currentPlayType === buttonActionType && currentPlayStage === 'awaitingLocation';
-  };
-  
-  // Close the menu if clicking outside of it
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowMoreMenu(false);
       }
     }
-    // Bind the event listener
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      // Unbind the event listener on clean up
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [menuRef]);
@@ -40,12 +31,12 @@ function ActionButtons({
 
   const handleUndoClick = () => {
     onUndo();
-    setShowMoreMenu(false); // Close menu after action
+    setShowMoreMenu(false);
   };
 
   const handleEndGame = () => {
     onEndGameClick();
-    setShowMoreMenu(false); // Close menu after action
+    setShowMoreMenu(false);
   };
 
   const handleSkipBatterClick = () => {
@@ -55,23 +46,25 @@ function ActionButtons({
 
   return (
     <div className="action-buttons-area">
-      {/* Hit and Outcome actions remain the same */}
       <div className="hit-actions">
         <button
-          className={`button-ccsa ${isActivePlay('flyHitTo') ? 'active-play' : ''}`}
+          className={`button-ccsa ${selectedHitType === 'flyHitTo' ? 'active-play' : ''}`}
           onClick={() => onPlayAction('flyHitTo')}
+          // The "disabled" prop is removed from this button
         >
           Fly hit to
         </button>
         <button
-          className={`button-ccsa ${isActivePlay('lineDriveTo') ? 'active-play' : ''}`}
+          className={`button-ccsa ${selectedHitType === 'lineDriveTo' ? 'active-play' : ''}`}
           onClick={() => onPlayAction('lineDriveTo')}
+          // The "disabled" prop is removed from this button
         >
           Line drive to
         </button>
         <button
-          className={`button-ccsa ${isActivePlay('grounderTo') ? 'active-play' : ''}`}
+          className={`button-ccsa ${selectedHitType === 'grounderTo' ? 'active-play' : ''}`}
           onClick={() => onPlayAction('grounderTo')}
+          // The "disabled" prop is removed from this button
         >
           Grounder to
         </button>
@@ -93,7 +86,6 @@ function ActionButtons({
         </button>
       </div>
 
-      {/* --- MODIFIED: Utility actions are now in a popup menu --- */}
       <div className="utility-actions" ref={menuRef}>
         <button
           onClick={handleMoreClick}

@@ -1234,3 +1234,102 @@ p {
 .more-menu-popup .end-game-button:hover {
     background-color: #c82333;
 }
+
+.modal-overlay {
+  position: fixed; /* This is the key change: positions relative to the viewport */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6); /* Dark semi-transparent background */
+  display: flex;
+  justify-content: center;
+  align-items: center; /* This vertically centers the modal */
+  z-index: 1000; /* Ensures it's on top of everything else */
+}
+
+/* This is the white box containing the modal's content */
+.modal-content {
+  background: white;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width:350px;
+  text-align: center;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.modal-content p {
+  margin-bottom: 20px;
+  color: #555;
+}
+
+/* This styles the container for the buttons */
+.modal-actions {
+  display: flex;
+  justify-content: space-around; /* Puts space between the buttons */
+  gap: 15px;
+}
+
+.modal-actions .button-ccsa {
+  flex-grow: 1; /* Makes buttons share the space evenly */
+}
+
+/* --- (You can add these if you don't have them) --- */
+.confirm-button {
+    background-color: #4CAF50; /* Green */
+    color: white;
+}
+
+.confirm-button:hover {
+    background-color: #45a049;
+}
+
+
+/* --- Styles for Fielder Selection Overlay --- */
+
+.fielder-selection-overlay {
+  position: absolute;
+  /* Move the top and left edges 20px outside the container */
+  top: -40px;
+  left: -20px;
+  /* Make the width and height 40px larger (20px for each side) */
+  width: calc(100% + 40px);
+  height: calc(100% + 40px);
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  border-radius: 15px; /* You might want to adjust the border-radius */
+}
+
+.fielder-button {
+  position: absolute;
+  transform: translate(-50%, -50%); /* Center the button on its coordinates */
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid #333;
+  color: #333;
+  font-weight: bold;
+  border-radius: 50%; /* Makes the buttons circular */
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  transition: all 0.2s ease-in-out;
+}
+
+.fielder-button:hover {
+  background-color: #ffc107; /* Highlight color on hover */
+  border-color: #e6a700;
+  transform: translate(-50%, -50%) scale(1.1); /* Slightly enlarge on hover */
+}
