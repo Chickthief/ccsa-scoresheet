@@ -2,6 +2,7 @@
 import React from 'react';
 import BasesDisplay from './BasesDisplay'; // Assuming this is still used if bases come back
 import { getInningSuffix } from '../../utils/gameLogic'; // <-- IMPORT (adjust path if needed)
+import Linescore from './Linescore';
 
 function GameStateBar({
   inning,
@@ -10,7 +11,7 @@ function GameStateBar({
   outs,
   // bases, // Bases display was removed from this component in the last mockup
   homeTeamName,
-  awayTeamName
+  awayTeamName,
 }) {
   const displayScoreAway = score && typeof score.away === 'number' ? score.away : 0;
   const displayScoreHome = score && typeof score.home === 'number' ? score.home : 0;

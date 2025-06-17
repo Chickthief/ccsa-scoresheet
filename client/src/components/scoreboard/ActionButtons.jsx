@@ -9,6 +9,7 @@ function ActionButtons({
   onSkipBatter,
   selectedHitType,
   onEndInning,
+  onViewLinescore
 }) {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const menuRef = useRef(null);
@@ -44,6 +45,10 @@ function ActionButtons({
   const handleEndInningClick = () => {
     onEndInning();
     setShowMoreMenu(false); // Close menu after action
+  };
+  const handleViewLinescoreClick = () => {
+    onViewLinescore();
+    setShowMoreMenu(false);
   };
 
   return (
@@ -110,6 +115,9 @@ function ActionButtons({
             </button>
             <button onClick={handleEndGame} className="menu-button end-game-button">
               End Game
+            </button>
+            <button onClick={handleViewLinescoreClick} className="menu-button">
+              View Linescore
             </button>
           </div>
         )}

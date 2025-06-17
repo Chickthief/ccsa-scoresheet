@@ -1,5 +1,5 @@
-// src/pages/ScoreboardPage.jsx
 import React, { useReducer, useEffect, useState, useMemo, useRef } from 'react';
+import Linescore from '../components/scoreboard/Linescore';
 import { initialGameState, gameReducer, getPlayerById } from '../utils/gameLogic';
 import GameStateBar from '../components/scoreboard/GameStateBar';
 import BattingInfo from '../components/scoreboard/BattingInfo';
@@ -27,19 +27,16 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
   const [currentHitType, setCurrentHitType] = useState(null);
   const [playToConfirm, setPlayToConfirm] = useState(null);
   const fielderSelectOverlayRef = useRef(null);
+  const [isLinescoreOpen, setIsLinescoreOpen] = useState(false);
 
   useEffect(() => {
-    if (gameState.isGameOver) {
-      if (typeof onGameOver === 'function') {
-        onGameOver(gameState);
-      }
+    if (gameState.isGameOver && typeof onGameOver === 'function') {
+      onGameOver(gameState);
     }
-  }, [gameState.isGameOver, onGameOver, gameState]);
+  }, [gameState.isGameOver, onGameOver]);
 
   useEffect(() => {
-    if (!isSelectingFielder) {
-      return;
-    }
+    if (!isSelectingFielder) return;
     function handleClickOutside(event) {
       if (fielderSelectOverlayRef.current && !fielderSelectOverlayRef.current.contains(event.target)) {
         setIsSelectingFielder(false);
@@ -53,10 +50,10 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
 
   const handlePlayAction = (playType) => {
     if (playType.includes('To')) {
-        setIsSelectingFielder(true);
-        setCurrentHitType(playType);
+      setIsSelectingFielder(true);
+      setCurrentHitType(playType);
     } else {
-        setPlayToConfirm(playType);
+      setPlayToConfirm(playType);
     }
   };
 
@@ -67,44 +64,28 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
       } else {
         dispatch({ type: 'RESOLVE_PLAY', payload: { type: playToConfirm } });
       }
-      setPlayToConfirm(null); // Close the modal
+      setPlayToConfirm(null);
     }
   };
 
-  const handleCancelPlay = () => {
-    setPlayToConfirm(null);
-  };
-
+  const handleCancelPlay = () => setPlayToConfirm(null);
   const handleFielderSelected = (fielder) => {
     setIsSelectingFielder(false);
-    dispatch({
-      type: 'START_PLAY',
-      payload: { playType: currentHitType, fielder: fielder },
-    });
+    dispatch({ type: 'START_PLAY', payload: { playType: currentHitType, fielder } });
   };
-
-  const handlePlayResolved = (playDetails) => {
-    dispatch({ type: 'RESOLVE_PLAY', payload: playDetails });
-  };
-
+  const handlePlayResolved = (playDetails) => dispatch({ type: 'RESOLVE_PLAY', payload: playDetails });
   const handleUndo = () => dispatch({ type: 'UNDO' });
   const handleSkipBatter = () => dispatch({ type: 'SKIP_BATTER' });
-  const handleEndGameConfirm = () => {
-    dispatch({ type: 'END_GAME' });
-    setIsEndGameModalOpen(false);
-    // Directly check if the onGameOver function should be called
-    if (typeof onGameOver === 'function') {
-        const nextState = gameReducer(gameState, { type: 'END_GAME' });
-        onGameOver(nextState);
-    }
-  };
-  const handleEndInning = () => {
-    setPlayToConfirm('endInning');
-  };
+  const handleEndGameConfirm = () => dispatch({ type: 'END_GAME' });
+  const handleEndInning = () => setPlayToConfirm('endInning');
+  const handleToggleLinescore = () => setIsLinescoreOpen(prev => !prev);
+  
+  // --- FIX: Define the missing stopPropagation function here ---
+  const stopPropagation = (e) => e.stopPropagation();
 
-  const { batter, onDeck, inTheHole, battingTeamName } = gameState.battingInfo;
-
+  const { batter, onDeck, inTheHole, battingTeamName } = gameState.battingInfo || {};
   const runnersOnBaseStart = useMemo(() => {
+    if (!gameState.bases) return [];
     return [
       { base: 1, playerId: gameState.bases.first },
       { base: 2, playerId: gameState.bases.second },
@@ -117,27 +98,24 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
     });
   }, [gameState.bases, gameState.homeTeamLineup, gameState.awayTeamLineup]);
 
-
   const runnersDataForDiamond = useMemo(() => {
-      const getPlayerDetails = (playerId) => {
-        if (!playerId) return null;
-        const player = getPlayerById(playerId, gameState.homeTeamLineup, gameState.awayTeamLineup);
-        return player ? { ...player, firstName: player.name.split(' ')[0] || player.number } : null;
-      };
-      return {
-        first: getPlayerDetails(gameState.bases.first),
-        second: getPlayerDetails(gameState.bases.second),
-        third: getPlayerDetails(gameState.bases.third),
-      };
+    if (!gameState.bases) return { first: null, second: null, third: null };
+    const getPlayerDetails = (playerId) => {
+      if (!playerId) return null;
+      const player = getPlayerById(playerId, gameState.homeTeamLineup, gameState.awayTeamLineup);
+      return player ? { ...player, firstName: player.name.split(' ')[0] || player.number } : null;
+    };
+    return {
+      first: getPlayerDetails(gameState.bases.first),
+      second: getPlayerDetails(gameState.bases.second),
+      third: getPlayerDetails(gameState.bases.third),
+    };
   }, [gameState.bases, gameState.homeTeamLineup, gameState.awayTeamLineup]);
 
-  // --- RENDER LOGIC RESTRUCTURED ---
-  return (
-    <div className="scoreboard-page-wrapper">
-      <GameStateBar {...gameState} />
-
-      {/* Conditionally render EITHER the main content OR the play resolution page */}
-      {gameState.currentPlay.stage === 'awaitingLocation' ? (
+  if (gameState.currentPlay && gameState.currentPlay.stage === 'awaitingLocation') {
+    return (
+      <div className="scoreboard-page-wrapper">
+        <GameStateBar {...gameState} />
         <PlayResolutionPage
           currentBatter={batter}
           runnersOnBaseStart={runnersOnBaseStart}
@@ -145,35 +123,34 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
           onGoBack={() => dispatch({ type: 'CANCEL_PLAY' })}
           currentPlay={gameState.currentPlay}
         />
-      ) : (
-        <>
-          <div className="scoreboard-main-content-area">
-            <BattingInfo currentBatter={batter} upNext={[onDeck, inTheHole]} battingTeamName={battingTeamName} />
-            <BaseballDiamond
-              batterName={batter ? batter.name.split(' ')[0] : ''}
-              batterNumber={batter ? batter.number : ''}
-              runners={runnersDataForDiamond}
-              onFieldClick={() => {}}
-              isSelectingFielder={isSelectingFielder}
-              onFielderSelected={handleFielderSelected}
-              overlayRef={fielderSelectOverlayRef}
-            />
-          </div>
-          <ActionButtons
-            onPlayAction={handlePlayAction}
-            onUndo={handleUndo}
-            onEndGameClick={() => setIsEndGameModalOpen(true)}
-            onSkipBatter={handleSkipBatter}
-            disableOutcomeButtons={isSelectingFielder || gameState.currentPlay.stage === 'awaitingLocation'}
-            currentPlayType={gameState.currentPlay.type}
-            currentPlayStage={gameState.currentPlay.stage}
-            selectedHitType={isSelectingFielder ? currentHitType : null}
-            onEndInning={handleEndInning}
-          />
-        </>
-      )}
+      </div>
+    );
+  }
 
-      {/* Modals will still appear on top of everything */}
+  return (
+    <div className="scoreboard-page-wrapper">
+      <GameStateBar {...gameState} />
+      <div className="scoreboard-main-content-area">
+        <BattingInfo currentBatter={batter} upNext={[onDeck, inTheHole]} battingTeamName={battingTeamName} />
+        <BaseballDiamond
+            batterName={batter ? batter.name.split(' ')[0] : ''}
+            batterNumber={batter ? batter.number : ''}
+            runners={runnersDataForDiamond}
+            isSelectingFielder={isSelectingFielder}
+            onFielderSelected={handleFielderSelected}
+            overlayRef={fielderSelectOverlayRef}
+        />
+      </div>
+      <ActionButtons
+        onPlayAction={handlePlayAction}
+        onUndo={handleUndo}
+        onEndGameClick={() => setIsEndGameModalOpen(true)}
+        onSkipBatter={handleSkipBatter}
+        onEndInning={handleEndInning}
+        onViewLinescore={handleToggleLinescore}
+        disableOutcomeButtons={isSelectingFielder || (gameState.currentPlay && gameState.currentPlay.stage === 'awaitingLocation')}
+        selectedHitType={isSelectingFielder ? currentHitType : null}
+      />
       <ConfirmEndGameModal
         isOpen={isEndGameModalOpen}
         onConfirm={handleEndGameConfirm}
@@ -185,6 +162,24 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
         onCancel={handleCancelPlay}
         playType={playToConfirm}
       />
+      {isLinescoreOpen && gameState.inningScores && (
+        <div className="modal-overlay" onClick={handleToggleLinescore}>
+          <div className="modal-content large-modal" onClick={stopPropagation}>
+            <h2>Linescore</h2>
+            <Linescore
+              scores={gameState.inningScores}
+              awayTeamName={gameState.awayTeamName}
+              homeTeamName={gameState.homeTeamName}
+              totalScore={gameState.score}
+            />
+            <div className="modal-actions">
+              <button className="button-ccsa" onClick={handleToggleLinescore}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1333,3 +1333,39 @@ p {
   border-color: #e6a700;
   transform: translate(-50%, -50%) scale(1.1); /* Slightly enlarge on hover */
 }
+
+/* --- Linescore Styles --- */
+.linescore-container {
+  width: 100%;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+.linescore-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: center;
+}
+
+.linescore-table th, .linescore-table td {
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  min-width: 25px; /* Ensure columns have a minimum width */
+}
+
+.linescore-table th {
+  background-color: #f2f2f2;
+  color: #333;
+}
+
+.linescore-table .team-name-col {
+  text-align: left;
+  font-weight: bold;
+  width: 30%; /* Give more space for team names */
+}
+
+.linescore-table .final-score-col {
+  font-weight: bold;
+  background-color: #e9e9e9;
+}
