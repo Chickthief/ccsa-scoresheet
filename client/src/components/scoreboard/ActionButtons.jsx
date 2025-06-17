@@ -7,7 +7,8 @@ function ActionButtons({
   onEndGameClick,
   disableOutcomeButtons,
   onSkipBatter,
-  selectedHitType
+  selectedHitType,
+  onEndInning,
 }) {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const menuRef = useRef(null);
@@ -28,20 +29,21 @@ function ActionButtons({
   const handleMoreClick = () => {
     setShowMoreMenu(prev => !prev);
   };
-
   const handleUndoClick = () => {
     onUndo();
     setShowMoreMenu(false);
   };
-
   const handleEndGame = () => {
     onEndGameClick();
     setShowMoreMenu(false);
   };
-
   const handleSkipBatterClick = () => {
     onSkipBatter();
     setShowMoreMenu(false);
+  };
+  const handleEndInningClick = () => {
+    onEndInning();
+    setShowMoreMenu(false); // Close menu after action
   };
 
   return (
@@ -99,6 +101,9 @@ function ActionButtons({
           <div className="more-menu-popup">
             <button onClick={handleUndoClick} className="menu-button">
               Undo Last Play
+            </button>
+            <button onClick={handleEndInningClick} className="menu-button">
+              End Inning
             </button>
             <button onClick={handleSkipBatterClick} className="menu-button">
               Skip Batter

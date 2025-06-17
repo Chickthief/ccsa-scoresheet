@@ -62,8 +62,12 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
 
   const handleConfirmPlay = () => {
     if (playToConfirm) {
-      dispatch({ type: 'RESOLVE_PLAY', payload: { type: playToConfirm } });
-      setPlayToConfirm(null);
+      if (playToConfirm === 'endInning') {
+        dispatch({ type: 'END_INNING' });
+      } else {
+        dispatch({ type: 'RESOLVE_PLAY', payload: { type: playToConfirm } });
+      }
+      setPlayToConfirm(null); // Close the modal
     }
   };
 
@@ -93,6 +97,9 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
         const nextState = gameReducer(gameState, { type: 'END_GAME' });
         onGameOver(nextState);
     }
+  };
+  const handleEndInning = () => {
+    setPlayToConfirm('endInning');
   };
 
   const { batter, onDeck, inTheHole, battingTeamName } = gameState.battingInfo;
@@ -161,6 +168,7 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
             currentPlayType={gameState.currentPlay.type}
             currentPlayStage={gameState.currentPlay.stage}
             selectedHitType={isSelectingFielder ? currentHitType : null}
+            onEndInning={handleEndInning}
           />
         </>
       )}

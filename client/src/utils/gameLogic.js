@@ -173,10 +173,38 @@ export function gameReducer(state, action) {
                 gameHistory: newHistory,
             };
         }
+        case 'END_INNING': {
+          const newState = {
+              ...state,
+              score: { ...state.score },
+              bases: { first: null, second: null, third: null }, // Clear bases
+              currentBatterIndex: { ...state.currentBatterIndex },
+          };
+
+          const wasTop = newState.isTopInning;
+          newState.outs = 0; // Reset outs
+          newState.isTopInning = !wasTop; // Flip to next half-inning
+
+          if (!wasTop) {
+              newState.inning++; // Increment inning number if bottom half just ended
+          }
+
+          // Update batting info for the team that is now up to bat
+          const nextTeamKey = newState.isTopInning ? 'away' : 'home';
+          const nextLineup = newState[`${nextTeamKey}TeamLineup`];
+          const nextIndex = newState.currentBatterIndex[nextTeamKey];
+          newState.battingInfo = {
+              ...getBattingOrderInfo(nextLineup, nextIndex),
+              battingTeamName: newState[`${nextTeamKey}TeamName`]
+          };
+          
+          return saveState(newState);
+        }
 
         case 'END_GAME': {
             return { ...state, isGameOver: true };
         }
+
 
         default:
             return state;

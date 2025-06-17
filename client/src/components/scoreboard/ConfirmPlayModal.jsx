@@ -12,6 +12,7 @@ function ConfirmPlayModal({ isOpen, onConfirm, onCancel, playType }) {
   // Determine the display text based on the play type
   const playText = playType === 'strikeOut' ? 'Strike Out' : 
                    playType === 'caughtOut' ? 'Caught Out' : 'Play';
+                   playType === 'endInning' ? 'End Inning' : 'End inning';
 
   return (
     <div className="modal-overlay">
