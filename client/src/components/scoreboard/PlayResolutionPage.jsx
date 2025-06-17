@@ -230,7 +230,6 @@ function PlayResolutionPage({
     <div className="play-resolution-page">
       <div className="prp-summary-row">
         <div className="prp-small-diamond-area">
-          {/* Replace this with your actual SmallBaseballDiamondDisplay component */}
           <SmallBaseballDiamondDisplay currentPositions={currentPendingBasesForDiamond} />
         </div>
         <div className="prp-live-stats">

@@ -3,8 +3,8 @@ import React from 'react';
 import diamondImg from '../../assets/baseball_diamond_full.png'; // Reuse the same image
 
 // Define fixed display size for this small diamond
-const SMALL_DIAMOND_WIDTH = 80; // px
-const SMALL_DIAMOND_HEIGHT = 80 * (750 / 812); // Maintain aspect ratio of your image
+const SMALL_DIAMOND_WIDTH = 120; // px
+const SMALL_DIAMOND_HEIGHT = 120 * (750 / 812); // Maintain aspect ratio of your image
 
 function SmallBaseballDiamondDisplay({ currentPositions }) {
   // currentPositions = { first: 'PlayerName/ID', second: '...', third: '...' }

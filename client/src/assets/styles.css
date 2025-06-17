@@ -53,11 +53,11 @@ body {
     color: #000;
     background-color: #fff;
     border: 1px solid #000;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin-top: 10px;    /* Space above the button */
-    margin-bottom: 10px; /* Space below the button */
+    margin-top: 5px;    /* Space above the button */
+    margin-bottom: 5px; /* Space below the button */
     /* If you want buttons to have a consistent width and be centered: */
     /* width: 80%; */
     /* max-width: 280px; */
@@ -741,11 +741,6 @@ p {
   padding-bottom: 10px;
   border-bottom: 1px solid #eee;
 }
-.prp-small-diamond-area { /* Ensure this is small */
-  width: 80px; height: 80px; flex-shrink: 0;
-  /* ... other styles for its content from before ... */
-}
-.prp-live-stats p { margin: 2px 0; font-size: 0.9em; font-weight: 500; }
 
 /* New Master Grid for Player Outcomes */
 .play-resolution-page {
@@ -768,11 +763,9 @@ p {
   flex-shrink: 0; /* Prevent this row from shrinking */
 }
 .prp-small-diamond-area {
-  width: 80px; height: 80px; flex-shrink: 0;
+  width: 120px; height: 120px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
 }
-.prp-live-stats p { margin: 2px 0; font-size: 0.9em; font-weight: 500; }
-
 /* This is the container for the player columns */
 .player-outcomes-grid {
   display: flex;
@@ -832,14 +825,14 @@ p {
 }
 
 .at-text-container {
-  height: 12px; /* Or adjust to fit your .at-text-pr font size + some breathing room */
+  height: 20px; /* Or adjust to fit your .at-text-pr font size + some breathing room */
   display: flex;
   align-items: center;
   justify-content: center; /* Centers the 'at' text horizontally */
   width: 100%;
 }
 .at-text-pr {
-  font-size: 0.65em;
+  font-size: 1em;
   color: #777;
   margin: 0;
   line-height: 1;
@@ -847,7 +840,7 @@ p {
 
 .button-placeholder-pr {
   width: 100%;
-  min-height: 55px; /* << MUST MATCH THE TOTAL RENDERED HEIGHT OF A .button-ccsa.small-pr */
+  min-height: 45px; /* << MUST MATCH THE TOTAL RENDERED HEIGHT OF A .button-ccsa.small-pr */
   box-sizing: border-box;
   visibility: hidden; /* Takes up space but is not visible */
   /* To ensure exact same spacing as a button with border and gap: */
@@ -967,14 +960,6 @@ p {
   width: 100%; /* Ensure it takes full width */
 }
 
-.prp-small-diamond-area {
-  width: 80px;  /* Or size of your SmallBaseballDiamondDisplay */
-  height: 75px; /* Or size of your SmallBaseballDiamondDisplay */
-  flex-shrink: 0; /* Prevent diamond from shrinking */
-  /* Add any other specific styling for this area if needed */
-  /* border: 1px solid lightblue; /* For debugging area */
-}
-
 .small-diamond-display { /* Style for the root div of SmallBaseballDiamondDisplay.jsx */
   background-size: contain;
   background-repeat: no-repeat;
@@ -1003,12 +988,14 @@ p {
 
 
 .prp-live-stats {
-  font-size: 0.9em;
+  font-size: 1.2em;
   flex-grow: 1; /* Allow it to take remaining space in the row */
 }
+
 .prp-live-stats p {
   margin: 3px 0;
   font-weight: 500;
+  font-size: 1em;
 }
 
 /* New section for advancement summary */
