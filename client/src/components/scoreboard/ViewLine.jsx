@@ -8,6 +8,7 @@ function ViewLine({
         onViewLinescore();
   };
     const handleViewLineupClick = () => {
+        onViewLineup();
   };
 
     return (

@@ -1,15 +1,27 @@
-// src/components/gameSetup/DraggablePlayerList.jsx
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import PlayerRow from './PlayerRow';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'; // <-- Import D&D components
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
-function DraggablePlayerList({ players, setPlayers, onRemovePlayer }) {
-  // This function is called when a drag operation ends
+function DraggablePlayerList({ players, setPlayers, onRemovePlayer, currentBatterId }) {
+  const listContainerRef = useRef(null);
+
+  useEffect(() => {
+    // Scroll to the current batter if one is specified
+    if (listContainerRef.current && currentBatterId) {
+      const itemSelector = `[data-rbd-draggable-id="${currentBatterId}"]`;
+      const el = listContainerRef.current.querySelector(itemSelector);
+      if (el) {
+        el.scrollIntoView({
+          behavior: 'auto',
+          block: 'center',
+        });
+      }
+    }
+  }, [currentBatterId, players]);
+
   const handleOnDragEnd = (result) => {
-    // If the item is dropped outside of a droppable area
     if (!result.destination) return;
 
-    // If the item is dropped in the same position it started
     if (
       result.destination.droppableId === result.source.droppableId &&
       result.destination.index === result.source.index
@@ -17,11 +29,11 @@ function DraggablePlayerList({ players, setPlayers, onRemovePlayer }) {
       return;
     }
 
-    const items = Array.from(players); // Create a new array copy
-    const [reorderedItem] = items.splice(result.source.index, 1); // Remove the dragged item
-    items.splice(result.destination.index, 0, reorderedItem); // Insert it at the new position
+    const items = Array.from(players);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
 
-    setPlayers(items); // Update the state in TeamLineupManager with the new order
+    setPlayers(items);
   };
 
   if (!players || players.length === 0) {
@@ -35,24 +47,26 @@ function DraggablePlayerList({ players, setPlayers, onRemovePlayer }) {
           <div
             className="player-list-container"
             {...providedDroppable.droppableProps}
-            ref={providedDroppable.innerRef}
+            ref={(el) => {
+              providedDroppable.innerRef(el);
+              listContainerRef.current = el;
+            }}
           >
             {players.map((player, index) => (
               <Draggable key={player.id.toString()} draggableId={player.id.toString()} index={index}>
                 {(providedDraggable, snapshot) => (
-                  // Pass necessary props to PlayerRow
-                  <PlayerRow
-                    player={player}
-                    onRemove={onRemovePlayer}
-                    // D&D provided props for the draggable item and its handle
-                    draggableProvided={providedDraggable}
-                    // dragHandleProps are part of draggableProvided
-                    isDragging={snapshot.isDragging}
-                  />
+                  <div style={{ backgroundColor: player.id === currentBatterId ? '#e0f7fa' : undefined, borderRadius: '4px', marginBottom: '4px' }}>
+                    <PlayerRow
+                      player={player}
+                      onRemove={onRemovePlayer}
+                      draggableProvided={providedDraggable}
+                      isDragging={snapshot.isDragging}
+                    />
+                  </div>
                 )}
               </Draggable>
             ))}
-            {providedDroppable.placeholder} {/* Important for D&D space reservation */}
+            {providedDroppable.placeholder}
           </div>
         )}
       </Droppable>

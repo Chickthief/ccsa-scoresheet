@@ -9,6 +9,7 @@ import PlayResolutionPage from '../components/scoreboard/PlayResolutionPage';
 import ConfirmEndGameModal from '../components/scoreboard/ConfirmEndGameModal';
 import ConfirmPlayModal from '../components/scoreboard/ConfirmPlayModal';
 import ViewLine from '../components/scoreboard/ViewLine';
+import TeamLineupManager from '../components/gameSetup/TeamLineupManager';
 
 function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
   const [gameState, dispatch] = useReducer(
@@ -29,6 +30,8 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
   const [playToConfirm, setPlayToConfirm] = useState(null);
   const fielderSelectOverlayRef = useRef(null);
   const [isLinescoreOpen, setIsLinescoreOpen] = useState(false);
+  const [isLineupModalOpen, setIsLineupModalOpen] = useState(false);
+  const [activeLineupTab, setActiveLineupTab] = useState(gameData.awayTeam.name);
   const [noMercyThisInning, setNoMercyThisInning] = useState(false);
 
   useEffect(() => {
@@ -93,7 +96,10 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
   const handleEndGameConfirm = () => dispatch({ type: 'END_GAME' });
   const handleEndInning = () => setPlayToConfirm('endInning');
   const handleToggleLinescore = () => setIsLinescoreOpen(prev => !prev);
-  const handleToggleLineup = () => setIsLinescoreOpen(prev => !prev);
+  const handleToggleLineup = () => setIsLineupModalOpen(prev => !prev);
+  const handleLineupChange = (teamName, newLineup) => {
+    dispatch({ type: 'UPDATE_LINEUP', payload: { teamName, newLineup } });
+  };
   
 
   const stopPropagation = (e) => e.stopPropagation();
@@ -197,6 +203,50 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
             />
             <div className="modal-actions">
               <button className="button-ccsa" onClick={handleToggleLinescore}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isLineupModalOpen && (
+        <div className="modal-overlay" onClick={handleToggleLineup}>
+          <div className="modal-content large-modal" onClick={stopPropagation}>
+            <div className="tabs-container">
+              <button
+                onClick={() => setActiveLineupTab(gameState.awayTeamName)}
+                className={`tab-button ${activeLineupTab === gameState.awayTeamName ? "active" : ""}`}
+              >
+                {`${gameState.awayTeamName} Lineup`}
+              </button>
+              <button
+                onClick={() => setActiveLineupTab(gameState.homeTeamName)}
+                className={`tab-button ${activeLineupTab === gameState.homeTeamName ? "active" : ""}`}
+              >
+                {`${gameState.homeTeamName} Lineup`}
+              </button>
+            </div>
+
+            {activeLineupTab === gameState.awayTeamName && (
+              <TeamLineupManager
+                key={gameState.awayTeamName}
+                teamName={gameState.awayTeamName}
+                initialLineupData={gameState.awayTeamLineup}
+                onLineupChange={(newLineup) => handleLineupChange(gameState.awayTeamName, newLineup)}
+              />
+            )}
+
+            {activeLineupTab === gameState.homeTeamName && (
+              <TeamLineupManager
+                key={gameState.homeTeamName}
+                teamName={gameState.homeTeamName}
+                initialLineupData={gameState.homeTeamLineup}
+                onLineupChange={(newLineup) => handleLineupChange(gameState.homeTeamName, newLineup)}
+              />
+            )}
+
+            <div className="modal-actions">
+              <button className="button-ccsa" onClick={handleToggleLineup}>
                 Close
               </button>
             </div>

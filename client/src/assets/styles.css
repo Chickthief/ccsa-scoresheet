@@ -193,6 +193,7 @@ p {
   display: flex;
   flex-direction: column;
   flex-grow: 1; /* Allow it to take remaining space if needed */
+  overflow-y: hidden; /* ** ADD THIS ** Prevents this container from scrolling */
 }
 
 .lineup-title {
@@ -203,8 +204,10 @@ p {
 }
 
 .player-list-container {
-  margin-bottom: 20px;
-  /* Add any specific container styling if needed */
+  margin-bottom: 0;
+  flex-grow: 1; /* ** ADD THIS ** Allows the list to fill available space */
+  overflow-y: auto; /* ** ADD THIS ** Makes the list scrollable */
+  max-height: 80%;
 }
 
 .player-row {
@@ -1241,24 +1244,26 @@ p {
 /* This is the white box containing the modal's content */
 .modal-content {
   background: white;
-  padding: 20px 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  width: 90%;
-  max-width:350px;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  width: 95%;
+  max-width: 370px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  max-height: 60vh; /* Don't let the modal be taller than 85% of the viewport */
 }
 
-.modal-content h2 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  color: #333;
+.modal-content .tabs-container {
+  flex-shrink: 0;
 }
 
-.modal-content p {
-  margin-bottom: 20px;
-  color: #555;
+.modal-content .modal-actions {
+  flex-shrink: 0;
+  margin-top: 15px;
 }
+
 
 /* This styles the container for the buttons */
 .modal-actions {

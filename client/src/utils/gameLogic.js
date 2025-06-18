@@ -293,6 +293,31 @@ export function gameReducer(state, action) {
             newState.currentPlay = { type: null, stage: null, details: {} };
             return saveState(newState);
         }
+        
+        case 'UPDATE_LINEUP': {
+            const { teamName, newLineup } = action.payload;
+            const teamKeyToUpdate = teamName === state.homeTeamName ? 'homeTeamLineup' : 'awayTeamLineup';
+            
+            const newState = {
+                ...state,
+                [teamKeyToUpdate]: newLineup,
+            };
+            
+            const battingTeamKey = state.isTopInning ? 'away' : 'home';
+            if (teamName === state[`${battingTeamKey}TeamName`]) {
+                const currentBatterIndex = state.currentBatterIndex[battingTeamKey];
+                
+                const newBatterIndex = Math.min(currentBatterIndex, newLineup.length - 1);
+                
+                newState.currentBatterIndex[battingTeamKey] = newBatterIndex;
+                newState.battingInfo = {
+                    ...getBattingOrderInfo(newLineup, newBatterIndex),
+                    battingTeamName: state[`${battingTeamKey}TeamName`],
+                };
+            }
+            
+            return saveState(newState);
+        }
 
         case 'END_GAME': {
             return { ...state, isGameOver: true };
