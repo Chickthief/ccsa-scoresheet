@@ -1,55 +1,44 @@
-// src/components/scoreboard/GameStateBar.jsx
 import React from 'react';
-import BasesDisplay from './BasesDisplay'; // Assuming this is still used if bases come back
-import { getInningSuffix } from '../../utils/gameLogic'; // <-- IMPORT (adjust path if needed)
-import Linescore from './Linescore';
+import { getInningSuffix } from '../../utils/gameLogic';
 
-function GameStateBar({
-  inning,
-  isTopInning,
-  score,
-  outs,
-  // bases, // Bases display was removed from this component in the last mockup
-  homeTeamName,
-  awayTeamName,
-}) {
-  const displayScoreAway = score && typeof score.away === 'number' ? score.away : 0;
-  const displayScoreHome = score && typeof score.home === 'number' ? score.home : 0;
-  const displayOuts = typeof outs === 'number' ? outs : 0;
-  const displayInning = typeof inning === 'number' ? inning : 1;
-  const inningSuffix = getInningSuffix(displayInning); // Now uses imported function
+function GameStateBar({ awayTeam, homeTeam, score, outs, inning, isTopInning }) {
+    // Correctly access team names from the nested objects
+    const awayTeamName = awayTeam?.name || 'Away';
+    const homeTeamName = homeTeam?.name || 'Home';
+    
+    const inningSuffix = getInningSuffix(inning);
+    const inningArrow = isTopInning ? '↑' : '↓';
 
-  let outsVisual = '⚪⚪';
-  if (displayOuts === 1) {
-    outsVisual = '🔴⚪';
-  } else if (displayOuts >= 2) {
-    outsVisual = '🔴🔴';
-  }
+    return (
+        <div className="game-state-bar-v2">
+            {/* Away Team Section */}
+            <div className="team-info away-team-info">
+                <span className="team-name-gsb main-team-name">{awayTeamName}</span>
+                <span className="score-points main-score">{score.away}</span>
+            </div>
 
-  return (
-    <div className="game-state-bar-v2">
-      <div className="team-info away-team-info">
-        <span className="team-name-gsb main-team-name">{awayTeamName || 'Away'}</span>
-        <span className="score-points main-score">{displayScoreAway}</span>
-      </div>
+            {/* Center Inning/Outs Block */}
+            <div className="inning-outs-block">
+                <div className="inning-display-v2">
+                    <span className="inning-arrow">{inningArrow}</span>
+                    <span className="inning-number">{inning}</span>
+                    <span className="inning-suffix">{inningSuffix}</span>
+                </div>
+                <div className="outs-display-v2">
+                    <span className="outs-text">OUTS</span>
+                    <span className="outs-circles">
+                        {Array(3).fill(null).map((_, i) => (i < outs ? '⚫' : '⚪'))}
+                    </span>
+                </div>
+            </div>
 
-      <div className="inning-outs-block">
-        <div className="inning-display-v2">
-          <span className="inning-arrow">{isTopInning ? '▲' : '▼'}</span>
-          <span className="inning-number">{displayInning}</span>
-          <span className="inning-suffix">{inningSuffix}</span>
+            {/* Home Team Section */}
+            <div className="team-info home-team-info">
+                <span className="score-points main-score">{score.home}</span>
+                <span className="team-name-gsb main-team-name">{homeTeamName}</span>
+            </div>
         </div>
-        <div className="outs-display-v2">
-          <span className="outs-text">Outs</span>
-          <span className="outs-circles">{outsVisual}</span>
-        </div>
-      </div>
-
-      <div className="team-info home-team-info">
-        <span className="score-points main-score">{displayScoreHome}</span>
-        <span className="team-name-gsb main-team-name">{homeTeamName || 'Home'}</span>
-      </div>
-    </div>
-  );
+    );
 }
+
 export default GameStateBar;

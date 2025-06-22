@@ -38,8 +38,8 @@ function PasteToAddPlayers({ onAddPlayers }) {
         className="paste-textarea"
         value={pastedText}
         onChange={handlePasteChange}
-        rows="4" // Adjusted rows
-        placeholder={"Example:\n50 Marcus\n23 Jeffrey"}
+        rows="1" // Adjusted rows
+        placeholder={"Example:\n42 Marcus"}
       />
       <button onClick={processPaste} className="button-ccsa add-from-paste-button">
         Add from Paste

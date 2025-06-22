@@ -15,11 +15,9 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
   const [gameState, dispatch] = useReducer(
     gameReducer,
     {
-      homeTeamLineup: initialLineups[gameData.homeTeam.name],
-      awayTeamLineup: initialLineups[gameData.awayTeam.name],
-      homeTeamName: gameData.homeTeam.name,
-      awayTeamName: gameData.awayTeam.name,
       gameDetails: gameData.gameDetails,
+      homeTeam: { ...gameData.homeTeam, lineup: initialLineups[gameData.homeTeam.name] || [] },
+      awayTeam: { ...gameData.awayTeam, lineup: initialLineups[gameData.awayTeam.name] || [] },
     },
     initialGameState
   );
@@ -32,6 +30,7 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
   const [isLinescoreOpen, setIsLinescoreOpen] = useState(false);
   const [isLineupModalOpen, setIsLineupModalOpen] = useState(false);
   const [activeLineupTab, setActiveLineupTab] = useState(gameData.awayTeam.name);
+  const [tempLineups, setTempLineups] = useState(null);
   const [noMercyThisInning, setNoMercyThisInning] = useState(false);
 
   useEffect(() => {
@@ -83,11 +82,9 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
     dispatch({ type: 'START_PLAY', payload: { playType: currentHitType, fielder } });
   };
   const handlePlayResolved = (playDetails) => {
-    // Check if it's the special mercy rule payload
     if (playDetails.type === 'MERCY_RULE_END_INNING') {
       dispatch({ type: playDetails.type, payload: playDetails.payload });
     } else {
-      // It's a normal play
       dispatch({ type: 'RESOLVE_PLAY', payload: playDetails });
     }
   };
@@ -96,15 +93,51 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
   const handleEndGameConfirm = () => dispatch({ type: 'END_GAME' });
   const handleEndInning = () => setPlayToConfirm('endInning');
   const handleToggleLinescore = () => setIsLinescoreOpen(prev => !prev);
-  const handleToggleLineup = () => setIsLineupModalOpen(prev => !prev);
-  const handleLineupChange = (teamName, newLineup) => {
-    dispatch({ type: 'UPDATE_LINEUP', payload: { teamName, newLineup } });
+  
+  const handleOpenLineupModal = () => {
+    setTempLineups({
+      [gameState.homeTeam.name]: gameState.homeTeam.lineup,
+      [gameState.awayTeam.name]: gameState.awayTeam.lineup,
+    });
+    setActiveLineupTab(gameState.battingInfo.battingTeamName);
+    setIsLineupModalOpen(true);
+  };
+
+  const handleTempLineupChange = (teamName, newLineup) => {
+    setTempLineups(prev => ({ ...prev, [teamName]: newLineup }));
+  };
+
+  const handleCloseLineupModal = () => {
+    if (!tempLineups) {
+        setIsLineupModalOpen(false);
+        return;
+    }
+    const hasChanges =
+      JSON.stringify(tempLineups[gameState.homeTeam.name]) !== JSON.stringify(gameState.homeTeam.lineup) ||
+      JSON.stringify(tempLineups[gameState.awayTeam.name]) !== JSON.stringify(gameState.awayTeam.lineup);
+
+    if (hasChanges) {
+      if (window.confirm('You have unsaved changes. Are you sure you want to close?')) {
+        setIsLineupModalOpen(false);
+        setTempLineups(null);
+      }
+    } else {
+      setIsLineupModalOpen(false);
+      setTempLineups(null);
+    }
   };
   
+  const handleSaveLineupChanges = () => {
+    dispatch({ type: 'UPDATE_LINEUP', payload: { teamName: gameState.homeTeam.name, newLineup: tempLineups[gameState.homeTeam.name] } });
+    dispatch({ type: 'UPDATE_LINEUP', payload: { teamName: gameState.awayTeam.name, newLineup: tempLineups[gameState.awayTeam.name] } });
+    setIsLineupModalOpen(false);
+    setTempLineups(null);
+  };
 
   const stopPropagation = (e) => e.stopPropagation();
 
   const { batter, onDeck, inTheHole, battingTeamName } = gameState.battingInfo || {};
+  
   const runnersOnBaseStart = useMemo(() => {
     if (!gameState.bases) return [];
     return [
@@ -114,16 +147,20 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
     ]
     .filter(runner => !!runner.playerId)
     .map(runner => {
-        const player = getPlayerById(runner.playerId, gameState.homeTeamLineup, gameState.awayTeamLineup);
+        const player = getPlayerById(runner.playerId, gameState.homeTeam.lineup, gameState.awayTeam.lineup);
+        if (!player) {
+            console.error(`Could not find player with ID ${runner.playerId} in any lineup.`);
+            return null;
+        }
         return { ...player, startingBase: runner.base };
-    });
-  }, [gameState.bases, gameState.homeTeamLineup, gameState.awayTeamLineup]);
+    }).filter(Boolean);
+  }, [gameState.bases, gameState.homeTeam.lineup, gameState.awayTeam.lineup]);
 
   const runnersDataForDiamond = useMemo(() => {
     if (!gameState.bases) return { first: null, second: null, third: null };
     const getPlayerDetails = (playerId) => {
       if (!playerId) return null;
-      const player = getPlayerById(playerId, gameState.homeTeamLineup, gameState.awayTeamLineup);
+      const player = getPlayerById(playerId, gameState.homeTeam.lineup, gameState.awayTeam.lineup);
       return player ? { ...player, firstName: player.name.split(' ')[0] || player.number } : null;
     };
     return {
@@ -131,7 +168,7 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
       second: getPlayerDetails(gameState.bases.second),
       third: getPlayerDetails(gameState.bases.third),
     };
-  }, [gameState.bases, gameState.homeTeamLineup, gameState.awayTeamLineup]);
+  }, [gameState.bases, gameState.homeTeam.lineup, gameState.awayTeam.lineup]);
 
   if (gameState.currentPlay && gameState.currentPlay.stage === 'awaitingLocation') {
     return (
@@ -160,7 +197,7 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
         <BattingInfo currentBatter={batter} upNext={[onDeck, inTheHole]} battingTeamName={battingTeamName} />
         <ViewLine
             onViewLinescore={handleToggleLinescore}
-            onViewLineup={handleToggleLineup}
+            onViewLineup={handleOpenLineupModal}
         />
         <BaseballDiamond
             batterName={batter ? batter.name.split(' ')[0] : ''}
@@ -197,8 +234,8 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
             <h2>Linescore</h2>
             <Linescore
               scores={gameState.inningScores}
-              awayTeamName={gameState.awayTeamName}
-              homeTeamName={gameState.homeTeamName}
+              awayTeamName={gameState.awayTeam.name}
+              homeTeamName={gameState.homeTeam.name}
               totalScore={gameState.score}
             />
             <div className="modal-actions">
@@ -209,46 +246,35 @@ function ScoreboardPage({ gameData, initialLineups, onGameOver }) {
           </div>
         </div>
       )}
-      {isLineupModalOpen && (
-        <div className="modal-overlay" onClick={handleToggleLineup}>
+      {isLineupModalOpen && tempLineups && (
+        <div className="modal-overlay" onClick={handleCloseLineupModal}>
           <div className="modal-content large-modal" onClick={stopPropagation}>
             <div className="tabs-container">
               <button
-                onClick={() => setActiveLineupTab(gameState.awayTeamName)}
-                className={`tab-button ${activeLineupTab === gameState.awayTeamName ? "active" : ""}`}
+                onClick={() => setActiveLineupTab(gameState.awayTeam.name)}
+                className={`tab-button ${activeLineupTab === gameState.awayTeam.name ? "active" : ""}`}
               >
-                {`${gameState.awayTeamName} Lineup`}
+                {`${gameState.awayTeam.name} Lineup`}
               </button>
               <button
-                onClick={() => setActiveLineupTab(gameState.homeTeamName)}
-                className={`tab-button ${activeLineupTab === gameState.homeTeamName ? "active" : ""}`}
+                onClick={() => setActiveLineupTab(gameState.homeTeam.name)}
+                className={`tab-button ${activeLineupTab === gameState.homeTeam.name ? "active" : ""}`}
               >
-                {`${gameState.homeTeamName} Lineup`}
+                {`${gameState.homeTeam.name} Lineup`}
               </button>
             </div>
-
-            {activeLineupTab === gameState.awayTeamName && (
-              <TeamLineupManager
-                key={gameState.awayTeamName}
-                teamName={gameState.awayTeamName}
-                initialLineupData={gameState.awayTeamLineup}
-                onLineupChange={(newLineup) => handleLineupChange(gameState.awayTeamName, newLineup)}
-              />
-            )}
-
-            {activeLineupTab === gameState.homeTeamName && (
-              <TeamLineupManager
-                key={gameState.homeTeamName}
-                teamName={gameState.homeTeamName}
-                initialLineupData={gameState.homeTeamLineup}
-                onLineupChange={(newLineup) => handleLineupChange(gameState.homeTeamName, newLineup)}
-              />
-            )}
-
+            
+            <TeamLineupManager
+              key={activeLineupTab}
+              teamName={activeLineupTab}
+              initialLineupData={tempLineups[activeLineupTab]}
+              onLineupChange={(newLineup) => handleTempLineupChange(activeLineupTab, newLineup)}
+              currentBatterId={battingTeamName === activeLineupTab && batter ? batter.id : null}
+            />
+            
             <div className="modal-actions">
-              <button className="button-ccsa" onClick={handleToggleLineup}>
-                Close
-              </button>
+              <button className="button-ccsa" onClick={handleSaveLineupChanges}>Save Changes</button>
+              <button className="button-ccsa" onClick={handleCloseLineupModal}>Cancel</button>
             </div>
           </div>
         </div>

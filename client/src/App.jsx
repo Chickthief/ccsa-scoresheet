@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState } from 'react';
 import LoginPage from './pages/LoginPage';
 import GameSetupPage from './pages/GameSetupPage';
@@ -12,28 +11,20 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [confirmedLineups, setConfirmedLineups] = useState(null);
-  // --- FIX 1: Add state to hold the final game data for the summary page ---
   const [finalGameData, setFinalGameData] = useState(null);
 
   const handleGameCodeSubmit = async (gameCode) => {
     setIsLoading(true);
     setError(null);
-    console.log(`Attempting to fetch game with code: ${gameCode}`);
-
     try {
       const response = await fetch(`${API_BASE_URL}games/${gameCode}`);
-      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Game not found.');
       }
-
       const data = await response.json();
-      console.log("Successfully fetched game data:", data);
-      
       setGameData(data);
       setCurrentPage('setup');
-
     } catch (err) {
       console.error("Failed to fetch game data:", err);
       setError(err.message);
@@ -43,29 +34,94 @@ function App() {
   };
 
   const handleGameStart = (lineups) => {
-    console.log("Starting game with confirmed lineups:", lineups);
     setConfirmedLineups(lineups);
     setCurrentPage('scoreboard');
   };
 
-  const handleGameOver = (endedGameState) => {
+  const handleGameOver = async (endedGameState) => {
     console.log("App.jsx: Game is Over. Received final state:", endedGameState);
+
+    try {
+        // Use gameData from App's state for reliable static data.
+        // endedGameState provides the final dynamic data (logs, scores, lineups).
+        const { playLog, homeTeam, awayTeam } = endedGameState;
+        
+        // Defensive check for lineups, which are inside the team objects.
+        const homeTeamLineup = homeTeam?.lineup || [];
+        const awayTeamLineup = awayTeam?.lineup || [];
+        
+        const plateAppearances = playLog.map(play => ({
+            player_user_id: play.player_user_id,
+            team_id: play.team_id,
+            inning: play.inning,
+            outcome: play.outcome,
+            runners_batted_in: play.runners_batted_in,
+        }));
+
+        const playerSummaries = {};
+        const allPlayers = [...homeTeamLineup, ...awayTeamLineup];
+
+        allPlayers.forEach(player => {
+            if (player && player.id) {
+                playerSummaries[player.id] = {
+                    plate_appearances: 0, runs: 0, singles: 0, doubles: 0, triples: 0, homeruns: 0,
+                    walks: 0, strikeouts: 0, runs_batted_in: 0,
+                };
+            }
+        });
+
+        playLog.forEach(play => {
+            const stats = playerSummaries[play.player_user_id];
+            if (stats) {
+                stats.plate_appearances++;
+                stats.runs_batted_in += play.runners_batted_in;
+                switch(play.outcome) {
+                    case 'SINGLE': stats.singles++; break;
+                    case 'DOUBLE': stats.doubles++; break;
+                    case 'TRIPLE': stats.triples++; break;
+                    case 'HOMERUN': stats.homeruns++; stats.runs++; break;
+                    case 'WALK': case 'INTENTIONAL_WALK': stats.walks++; break;
+                    case 'STRIKEOUT': stats.strikeouts++; break;
+                }
+            }
+        });
+        
+        // Get gameId from the reliable gameData state variable, not the one from the reducer state.
+        const gameId = gameData?.gameDetails?.id;
+        if (gameId) {
+            const response = await fetch(`${API_BASE_URL}games/${gameId}/summary`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plateAppearances, playerSummaries })
+            });
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to submit game stats.');
+            }
+            const result = await response.json();
+            console.log('Successfully submitted stats:', result.message);
+        } else {
+            console.error("Cannot submit stats: Missing Game ID from App's main gameData state.");
+        }
+
+    } catch (err) {
+        console.error("Error submitting game stats:", err);
+    }
+    
     const summaryData = {
       awayTeam: {
-        name: endedGameState.awayTeamName,
+        name: endedGameState.awayTeam.name,
         finalScore: endedGameState.score.away,
       },
       homeTeam: {
-        name: endedGameState.homeTeamName,
+        name: endedGameState.homeTeam.name,
         finalScore: endedGameState.score.home,
       },
-      gameCode: endedGameState.gameDetails?.gameCode || "N/A",
-      umpire: { name: "Roland Chan", id: "00039" },
+      gameCode: gameData?.gameDetails?.gameCode || "N/A", // Use reliable gameData
+      umpire: { name: "Roland Chan", id: "00039" }, 
       gameHistory: endedGameState.gameHistory || []
     };
-    // Use the correct state setters
     setFinalGameData(summaryData);
-    // --- FIX 2: Use the correct function to change the page ---
     setCurrentPage('summary');
   };
 
@@ -86,12 +142,10 @@ function App() {
           <ScoreboardPage
             gameData={gameData}
             initialLineups={confirmedLineups}
-            // --- FIX 3: Pass the handleGameOver function as a prop ---
             onGameOver={handleGameOver}
           />
         );
       case 'summary':
-        // Pass the finalGameData to the summary page
         return <GameSummaryPage gameData={finalGameData} />;
       default:
         return <div>Loading...</div>;

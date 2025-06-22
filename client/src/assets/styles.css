@@ -1252,7 +1252,7 @@ p {
   text-align: center;
   display: flex;
   flex-direction: column;
-  max-height: 60vh; /* Don't let the modal be taller than 85% of the viewport */
+  max-height: 80%; /* Don't let the modal be taller than 85% of the viewport */
 }
 
 .modal-content .tabs-container {

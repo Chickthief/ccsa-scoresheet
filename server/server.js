@@ -14,9 +14,9 @@ app.use(express.json()); // Allow the server to accept and parse JSON in request
 // === Database Connection Pool ===
 // A connection pool is more efficient than creating a new connection for every query.
 const pool = mysql.createPool({
-    host: 'localhost',      // Or '127.0.0.1' for your local machine
-    user: 'root',           // Your MySQL username (default for XAMPP/MAMP is often 'root')
-    password: '',           // Your MySQL password (default for XAMPP/MAMP is often empty)
+    host: 'localhost',       // Or '127.0.0.1' for your local machine
+    user: 'root',            // Your MySQL username (default for XAMPP/MAMP is often 'root')
+    password: '',            // Your MySQL password (default for XAMPP/MAMP is often empty)
     database: 'ccsa_scoresheet',
     waitForConnections: true,
     connectionLimit: 10,
@@ -99,16 +99,19 @@ app.get('/api/games/:gameCode', async (req, res) => {
         // Step 4: Assemble the final response object in the format the frontend expects
         const responseData = {
             gameDetails: {
+                id: game.id, // <-- Make sure to send the game's database ID
                 gameCode: game.game_code,
                 location: game.park_name,
                 date: new Date(game.game_date).toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' }),
                 time: new Date(`1970-01-01T${game.game_time}Z`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC' }),
             },
             homeTeam: {
+                id: game.home_team_id, // <-- Send home team ID
                 name: game.home_team_name,
                 lineup: homePlayers
             },
             awayTeam: {
+                id: game.away_team_id, // <-- Send away team ID
                 name: game.away_team_name,
                 lineup: awayPlayers
             }
@@ -123,9 +126,78 @@ app.get('/api/games/:gameCode', async (req, res) => {
 });
 
 
-// TODO: Add POST endpoints for stats and game submissions
-// app.post('/api/games/:gameId/stats', ...);
-// app.post('/api/submissions', ...);
+// === NEW ENDPOINT TO RECEIVE AND PROCESS FINAL GAME STATS ===
+app.post('/api/games/:gameId/summary', async (req, res) => {
+    const { gameId } = req.params;
+    const { plateAppearances, playerSummaries } = req.body;
+
+    // Basic validation
+    if (!plateAppearances || !playerSummaries) {
+        return res.status(400).json({ error: 'Missing plateAppearances or playerSummaries in request body.' });
+    }
+
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+        console.log(`Starting transaction for game ID: ${gameId}`);
+
+        // 1. Clear any existing plate appearance data for this game to ensure the submission can be retried.
+        console.log(`Deleting existing plate appearances for game ID: ${gameId}`);
+        await connection.query('DELETE FROM plate_appearances WHERE game_id = ?', [gameId]);
+
+        // 2. Insert new plate appearances if there are any
+        if (plateAppearances.length > 0) {
+            const paValues = plateAppearances.map(pa => [
+                gameId,
+                pa.player_user_id,
+                pa.team_id,
+                pa.inning,
+                pa.outcome,
+                pa.runners_batted_in
+            ]);
+            console.log(`Inserting ${paValues.length} new plate appearances.`);
+            await connection.query(
+                'INSERT INTO plate_appearances (game_id, player_user_id, team_id, inning, outcome, runners_batted_in) VALUES ?',
+                [paValues]
+            );
+        }
+
+        // 3. Update the player_game_stats for each player
+        console.log('Updating player summary stats...');
+        for (const playerId in playerSummaries) {
+            const stats = playerSummaries[playerId];
+            await connection.query(
+                `UPDATE player_game_stats SET
+                    plate_appearances = ?, runs = ?, singles = ?, doubles = ?, triples = ?, homeruns = ?,
+                    walks = ?, strikeouts = ?, runs_batted_in = ?
+                WHERE game_id = ? AND player_user_id = ?`,
+                [
+                    stats.plate_appearances, stats.runs, stats.singles, stats.doubles, stats.triples, stats.homeruns,
+                    stats.walks, stats.strikeouts, stats.runs_batted_in,
+                    gameId,
+                    playerId
+                ]
+            );
+        }
+        
+        await connection.commit();
+        console.log(`Successfully committed stats for game ID: ${gameId}`);
+        res.json({ message: 'Game stats submitted successfully!' });
+
+    } catch (error) {
+        if (connection) {
+            await connection.rollback();
+            console.error("Transaction rolled back due to error.");
+        }
+        console.error("Failed to submit game stats:", error);
+        res.status(500).json({ error: 'Database error while submitting stats.' });
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+});
 
 
 // Start the server
